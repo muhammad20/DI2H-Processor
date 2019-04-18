@@ -1,3 +1,17 @@
+#ignore any possible shit
+*.mpf
+*.mti
+*.bak
+**/
+*.pdf
+*.docx
+*.doc
+*.ppt
+*.pptx
+*.rar
+*.zip
+*.tar.gz
+
 # Prerequisites
 *.d
 
