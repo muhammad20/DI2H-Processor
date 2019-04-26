@@ -2,8 +2,8 @@ force -freeze sim:/arithmeticlogicunit/alu_enable 1 0
 force -freeze sim:/arithmeticlogicunit/clock 1 0, 0 {50 ns} -r 100
 force -freeze sim:/arithmeticlogicunit/reset 1 0
 force -freeze sim:/arithmeticlogicunit/operation 3'h1 0
-force -freeze sim:/arithmeticlogicunit/source 16'h000F 0
-force -freeze sim:/arithmeticlogicunit/destination 16'hF00F 0
+force -freeze sim:/arithmeticlogicunit/src 16'h000F 0
+force -freeze sim:/arithmeticlogicunit/dest 16'hF00F 0
 force -freeze sim:/arithmeticlogicunit/shift_amount 4'h4 0
 force -freeze sim:/arithmeticlogicunit/reset 0 0
 run
@@ -12,16 +12,16 @@ force -freeze sim:/arithmeticlogicunit/reset 1 0
 run
 force -freeze sim:/arithmeticlogicunit/reset 0 0
 run
-force -freeze sim:/arithmeticlogicunit/destination 16'hF000 0
+force -freeze sim:/arithmeticlogicunit/dest 16'hF000 0
 run
-force -freeze sim:/arithmeticlogicunit/destination 16'hF000 0
+force -freeze sim:/arithmeticlogicunit/dest 16'hF000 0
 force -freeze sim:/arithmeticlogicunit/operation 3'h7 0
 run
-force -freeze sim:/arithmeticlogicunit/destination 16'hFCBA 0
+force -freeze sim:/arithmeticlogicunit/dest 16'hFCBA 0
 run
-force -freeze sim:/arithmeticlogicunit/destination 16'h0CB0 0
+force -freeze sim:/arithmeticlogicunit/dest 16'h0CB0 0
 run
 force -freeze sim:/arithmeticlogicunit/operation 3'h2 0
 run
-force -freeze sim:/arithmeticlogicunit/destination 16'h0001 0
+force -freeze sim:/arithmeticlogicunit/dest 16'h0001 0
 run
