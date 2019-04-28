@@ -3,7 +3,7 @@ Library ieee;
 use ieee.std_logic_1164.all;
 
 entity tristate is
-    generic(n: integer := 16);
+    generic(n: integer := 32);
     port(
         inData: in std_logic_vector(n-1 downto 0);
         outData: out std_logic_vector(n-1 downto 0);
