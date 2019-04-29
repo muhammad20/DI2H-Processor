@@ -26,29 +26,7 @@ port(
     outData: out std_logic_vector(n-1 downto 0));
 end component;
 
---Component for 4X1 multiplexer
-component mux4x1 is 
-generic( size: positive := 16);
-port(
-in0,in1,in2,in3: in std_logic_vector(size-1 downto 0);
-s: in std_logic_vector(1 downto 0);
-c : out std_logic_vector(size-1 downto 0));
-end component; 
 
---Component for 2X1 multiplexer
-component mux2x1 is 
-
-generic( size: positive := 16);
-
-port(
-
-in0,in1: in std_logic_vector(size-1 downto 0);
-
-s: in std_logic;
-
-c : out std_logic_vector(size-1 downto 0));
-
-end component;
 
 component tristate is
     generic(n: integer := 32);
