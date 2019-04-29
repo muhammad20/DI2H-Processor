@@ -21,7 +21,8 @@ else "00001000" when s="011" and en='1'
 else "00010000" when s="100" and en='1'
 else "00100000" when s="101" and en='1'
 else "01000000" when s="110" and en='1'
-else "10000000";
+else "10000000" when s="111" and en='1'
+else "00000000";
 
 
 
