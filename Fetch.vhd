@@ -73,28 +73,29 @@ process(clock, reset)
 begin
 	if (reset = '1') then
 		instructionIn <= (Others =>'0');
-		programCount<=(Others=>'0');
+ 		programCount<=(Others=>'0');
+	elsif(rising_edge(clock) and fetch_enable = '1') then
+		programCount<= pcChosen;	
 	elsif(falling_edge(clock) and fetch_enable = '1') then
 		instructionIn<=instruction_in;
-		programCount <= pcChosen;
 		
 	end if;
 end process;
-program_counter <= programCount when fetch_enable='1' and pc_change_enable = '1' else (others=>'0') when reset = '1';
-instruction_out<=instructionOut when fetch_enable='1' else (others=>'0');
+
+program_counter <= programCount when fetch_enable='1' and pc_change_enable = '1';
+instruction_out<=nopInstruction when fetch_enable='0' else 
+		 instructionregisterSignal;
 nopInstruction <= "00000000000000001101100000000000";
 
 instructionTristate: tristate generic map(32) port map(instructionIn,instructionRegisterSignal, fetch_enable);
 
 --pcRegister : nbit_register generic map(32) port map(pcChosen,clock, reset, fetch_enable,programCount);
 
-instructionOut<= nopInstruction when fetch_enable='0' else 
-		 instructionregisterSignal;
 
-countChoice<= 	pc1 when fetch_enable='1' and instruction_selectors="00" else
-		pc2 when fetch_enable='1' and instruction_selectors="01" else
-		new_pc when fetch_enable='1' and instruction_selectors ="10" else
-		new_pc when fetch_enable='1' and instruction_selectors ="11";
+countChoice<= 	pc1 	when fetch_enable = '1' and instruction_selectors="00" 	else
+		pc2 	when fetch_enable = '1' and instruction_selectors="01" 	else
+		new_pc 	when fetch_enable = '1' and instruction_selectors ="10" else
+		new_pc 	when fetch_enable = '1' and instruction_selectors ="11";
 
 pcChosen <=	countChoice when fetch_enable='1' and int ='0' else 
 		memory1_location when fetch_enable='1' and int = '1';		
@@ -103,4 +104,3 @@ pc1<=std_logic_vector(to_signed(to_integer(unsigned(programCount)+1),32)) when p
 pc2<=std_logic_vector(to_signed(to_integer(unsigned(programCount)+2),32)) when pc_change_enable = '1';
 
 end Architecture;
-
