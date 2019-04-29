@@ -52,9 +52,9 @@ begin
 	if (reset = '1') then
 		instructionIn <= (Others =>'0');
  		programCount<=(Others=>'0');
-	elsif(rising_edge(clock) and fetch_enable = '1') then
-		programCount<= pcChosen;	
 	elsif(falling_edge(clock) and fetch_enable = '1') then
+		programCount<= pcChosen;	
+	elsif(rising_edge(clock) and fetch_enable = '1') then
 		instructionIn<=instruction_in;
 		
 	end if;
@@ -82,3 +82,4 @@ pc1<=std_logic_vector(to_signed(to_integer(unsigned(programCount)+1),32)) when p
 pc2<=std_logic_vector(to_signed(to_integer(unsigned(programCount)+2),32)) when pc_change_enable = '1';
 
 end Architecture;
+
