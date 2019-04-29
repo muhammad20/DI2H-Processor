@@ -6,106 +6,75 @@ entity Register_File is
 
 port(
 Read_Sig, Write_Sig,clk,rst: in std_logic;
-Address1,Address2,Address3: in std_logic_vector( 2 downto 0);
+Address_read1,Address_read2,Address_write: in std_logic_vector( 2 downto 0);
 datain: in std_logic_vector(15 downto 0);
 dataout1,dataout2: out std_logic_vector(15 downto 0)
 );
 end entity;
 
-architecture arh2 of Register_File is  
+architecture arch2 of Register_File is  
 
-component mux8x1 is 
-
-generic( size: positive := 16);
-
-port(
-
-in0,in1,in2,in3, in4, in5, in6, in7: in std_logic_vector(size-1 downto 0);
-
-s: in std_logic_vector(2 downto 0);
-
-c : out std_logic_vector(size-1 downto 0));
-
-end component;
-
-component decoder3x8 is 
-
-port(
-s: in std_logic_vector(2 downto 0);
-en: in std_logic;
-output: out std_logic_vector( 7 downto 0));
-
-end component; 
-
-component nbit_register is
-generic(n: integer := 16);
-port(
-    indata: in std_logic_vector(n-1 downto 0);
-    clk, rst, en: in std_logic;
-    outData: out std_logic_vector(n-1 downto 0));
-end component;
-
-component tristate is
-    generic(n: integer := 32);
-    port(
-        inData: in std_logic_vector(n-1 downto 0);
-        outData: out std_logic_vector(n-1 downto 0);
-        ctl: in std_logic
-    );
-end component;
-signal endec1,endec2,endec3: std_logic;
-signal output1,output2,output3,output4: std_logic_vector(7 downto 0);
+signal endec_read1,endec_read2,endec_write: std_logic;
+signal output_read1,output_read2,output_write1,output4: std_logic_vector(7 downto 0);
 signal out1,out2,out3,out4,out5,out6,out7,out8: std_logic_vector(15 downto 0);
 signal outdata1,outdata2,outdata3,outdata4,outdata5,outdata6,outdata7,outdata8: std_logic_vector(15 downto 0); 
 
 begin
 
-t0: tristate generic map(16) port map (datain,outdata1,output3(0));
-t1: tristate generic map(16) port map (datain,outdata2,output3(1));
-t2: tristate generic map(16) port map (datain,outdata3,output3(2));
-t3: tristate generic map(16) port map (datain,outdata4,output3(3));
-t4: tristate generic map(16) port map (datain,outdata5,output3(4));
-t5: tristate generic map(16) port map (datain,outdata6,output3(5));
-t6: tristate generic map(16) port map (datain,outdata7,output3(6));
-t7: tristate generic map(16) port map (datain,outdata8,output3(7));
-r0: nbit_register generic map(16) port map (outdata1,clk,rst,output4(0),out1);
-r1: nbit_register generic map(16) port map (outdata2,clk,rst,output4(1),out2);
-r2: nbit_register generic map(16) port map (outdata3,clk,rst,output4(2),out3);
-r3: nbit_register generic map(16) port map (outdata4,clk,rst,output4(3),out4);
-r4: nbit_register generic map(16) port map (outdata5,clk,rst,output4(4),out5);
-r5: nbit_register generic map(16) port map (outdata6,clk,rst,output4(5),out6);
-r6: nbit_register generic map(16) port map (outdata7,clk,rst,output4(6),out7);
-r7: nbit_register generic map(16) port map (outdata8,clk,rst,output4(7),out8);
+--read data from read address 1
+t0: entity work.tristate generic map(16) port map (out1,dataout1,output_read1(0));
+t1: entity work.tristate generic map(16) port map (out2,dataout1,output_read1(1));
+t2: entity work.tristate generic map(16) port map (out3,dataout1,output_read1(2));
+t3: entity work.tristate generic map(16) port map (out4,dataout1,output_read1(3));
+t4: entity work.tristate generic map(16) port map (out5,dataout1,output_read1(4));
+t5: entity work.tristate generic map(16) port map (out6,dataout1,output_read1(5));
+t6: entity work.tristate generic map(16) port map (out7,dataout1,output_read1(6));
+t7: entity work.tristate generic map(16) port map (out8,dataout1,output_read1(7));
 
-output4 <= output1 or output2;
+--read data from read address 2
+t8: entity work.tristate generic map(16) port map (out1,dataout2,output_read2(0));
+t9: entity work.tristate generic map(16) port map (out2,dataout2,output_read2(1));
+tA: entity work.tristate generic map(16) port map (out3,dataout2,output_read2(2));
+tB: entity work.tristate generic map(16) port map (out4,dataout2,output_read2(3));
+tC: entity work.tristate generic map(16) port map (out5,dataout2,output_read2(4));
+tD: entity work.tristate generic map(16) port map (out6,dataout2,output_read2(5));
+tE: entity work.tristate generic map(16) port map (out7,dataout2,output_read2(6));
+tF: entity work.tristate generic map(16) port map (out8,dataout2,output_read2(7));
 
-d0: decoder3x8 port map(Address1,endec1,output1);
-d1: decoder3x8 port map(Address2,endec2,output2);
-d2: decoder3x8 port map(Address3,endec3,output3);
+--8 16-bit registers
+r0: entity work.nbit_register generic map(16) port map (datain,clk,rst,output_write1(0),out1);
+r1: entity work.nbit_register generic map(16) port map (datain,clk,rst,output_write1(1),out2);
+r2: entity work.nbit_register generic map(16) port map (datain,clk,rst,output_write1(2),out3);
+r3: entity work.nbit_register generic map(16) port map (datain,clk,rst,output_write1(3),out4);
+r4: entity work.nbit_register generic map(16) port map (datain,clk,rst,output_write1(4),out5);
+r5: entity work.nbit_register generic map(16) port map (datain,clk,rst,output_write1(5),out6);
+r6: entity work.nbit_register generic map(16) port map (datain,clk,rst,output_write1(6),out7);
+r7: entity work.nbit_register generic map(16) port map (datain,clk,rst,output_write1(7),out8);
 
-m0: mux8x1 generic map(16) port map(out1,out2,out3,out4,out5,out6,out7,out8,Address1,dataout1);
-m1: mux8x1 generic map(16) port map(out1,out2,out3,out4,out5,out6,out7,out8,Address2,dataout2);
+--read decoders
+d0: entity work.decoder3x8 port map(Address_read1,endec_read1,output_read1);
+d1: entity work.decoder3x8 port map(Address_read2,endec_read2,output_read2);
+
+--write decoder
+d2: entity work.decoder3x8 port map(Address_write,endec_write,output_write1);
 
 process(clk, Write_Sig, Read_Sig)
 begin
-if (rst = '1') then
-    dataout1 <= (others => '0');
-    dataout2 <= (others => '0');
-    else 
+if(rst='1') then
+	endec_write <= '0';
+	endec_read1 <= '0';
+	endec_read2 <= '0';
+	else
     if(rising_edge(clk) and Write_Sig='1') 
-    then endec3<='1';
-        endec2 <='0';
-        endec1 <= '0';
+    then endec_write<='1';
+	endec_read1 <= '0';
+	endec_read2 <= '0';
     elsif (falling_edge(clk) and Read_Sig='1') 
-        then endec2<='1';
-        endec1<='1';
-        endec3 <='0';
-    else 
+        then endec_read2<='1';
+		endec_read1 <='1';
+		endec_write <= '0';
 end if;
 end if;
 end process;
-
-
-
 
 end architecture;
