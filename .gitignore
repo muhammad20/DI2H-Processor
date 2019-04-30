@@ -2,7 +2,6 @@
 *.mpf
 *.mti
 *.bak
-**/
 *.pdf
 *.docx
 *.doc
@@ -46,3 +45,5 @@ transcript
 *.exe
 *.out
 *.app
+
+.vscode/
