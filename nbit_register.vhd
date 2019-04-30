@@ -15,11 +15,13 @@ architecture registerarch of nbit_register is
     begin
         process(clk, rst, en, indata)
         begin
-            if(rst = '1' and en = '1') 
-                then outData <= (others => '0');
-            elsif (rst='0' and en = '1')
-                then outData <= inData;
+            if(rst = '1') then 
+				outData <= (others => '0');
+			else
+            if (rising_edge(clk) and en = '1') then 
+				outData <= inData;
             end if;
+		end if;
         end process;
 end architecture;
 

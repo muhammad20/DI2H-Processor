@@ -12,6 +12,7 @@
 *.tar.gz
 *.wlf
 transcript
+work/
 
 # Prerequisites
 *.d
