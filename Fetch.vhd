@@ -50,11 +50,10 @@ begin
 process(clock, reset)
 begin
 	if (reset = '1') then
-		instructionIn <= (Others =>'0');
+		instructionIn <= nopInstruction;
  		programCount<=(Others=>'0');
-	elsif(falling_edge(clock) and fetch_enable = '1') then
-		programCount<= pcChosen;	
 	elsif(rising_edge(clock) and fetch_enable = '1') then
+		programCount<= pcChosen;	
 		instructionIn<=instruction_in;
 		
 	end if;
