@@ -8,8 +8,16 @@ namespace Assembler
     {
         static void Main(string[] args)
         {
-            new AssemblyConverter().AssemblyConvert("MOV R0,R1");
-            new AssemblyConverter().AssemblyConvert("SHR R1, 15");
+            var converter = new AssemblyConverter();
+            
+            converter.AssemblyConvert("MOV R0,R1");
+            converter.AssemblyConvert("SHR R1, 15");
+            
+            converter.AssemblyConvert("RTI");
+            converter.AssemblyConvert("JZ R0");
+            
+            converter.AssemblyConvert("SETC");
+            converter.AssemblyConvert("INC R1");
             // string filename = args[0];
             // // Okay so we need to parse the input file.
             // using(var reader = new StreamReader(filename))
@@ -99,21 +107,17 @@ namespace Assembler
         public string AssemblyConvert(string assembly)
         {
             string machineCode = "";
-
-            // Place the opcode.
-            string opCode = assembly.Substring(0, assembly.IndexOf(' '));
+            
+            // First extract the opcode from the assmebly.
+            string opCode = this.ExtractOpCode(assembly);
             machineCode += _opCodeLookup[opCode.ToUpper()];
 
             // Check the type and identify the missing bits and pieces.
             var typeCode = $"{machineCode[0]}" + $"{machineCode[1]}";
-            var instructionParts = assembly.Substring(assembly.IndexOf(' ') + 1).Split(',');
-            for(int i = 0; i < instructionParts.Length; i++)
-            {
-                if(instructionParts[i].Contains(' '))
-                {
-                    instructionParts[i] = instructionParts[i].Replace(" ", string.Empty);
-                }
-            }
+
+            // Extract the instruction parts
+            var instructionParts = this.ExtractInstructionParts(assembly);
+
             bool hasNext = false;
 
             switch (typeCode)
@@ -122,7 +126,18 @@ namespace Assembler
 
                     break;
                 case "01":
-                
+                    
+                    switch(machineCode.Substring(2))
+                    {
+                        case "110":
+                        case "111":
+                            
+                            break;
+                        default:
+                            machineCode += _registerLookup[instructionParts[0].ToUpper()];
+                            break;
+                    }
+
                     break;
                 case "10":
                     
@@ -141,12 +156,15 @@ namespace Assembler
                         machineCode += immediateValueBinary;
                     }else 
                     {
-                        machineCode += _registerLookup[instructionParts[1]];    
+                        machineCode += _registerLookup[instructionParts[1].ToUpper()];    
                     }
 
                     break;
                 case "11":
-
+                    if(_registerLookup.ContainsKey(instructionParts[0]))
+                    {
+                        machineCode += _registerLookup[instructionParts[0]];
+                    }
                     break;
                 default:
                     throw new Exception("Wrong op code");
@@ -164,6 +182,32 @@ namespace Assembler
             arr[15] = (char)(hasNext ? '1' : '0');
             machineCode = new string(arr);
             return machineCode;         
+        }
+
+        private string ExtractOpCode(string assembly)
+        {
+            string opCode;
+            // Place the opcode.
+            if(assembly.Contains(' ')){
+                opCode = assembly.Substring(0, assembly.IndexOf(' '));
+
+            }else {
+                opCode = assembly;
+            }
+            return opCode;
+        }
+
+        private string[] ExtractInstructionParts(string assembly)
+        {
+            var instructionParts = assembly.Substring(assembly.IndexOf(' ') + 1).Split(',');
+            for(int i = 0; i < instructionParts.Length; i++)
+            {
+                if(instructionParts[i].Contains(' '))
+                {
+                    instructionParts[i] = instructionParts[i].Replace(" ", string.Empty);
+                }
+            }
+            return instructionParts;
         }
     }
 }
