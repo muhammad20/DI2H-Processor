@@ -8,20 +8,8 @@ namespace Assembler
     class Program
     {
         static void Main(string[] args)
-        {
+        {   
             var converter = new AssemblyConverter();
-            
-            converter.AssemblyConvert("MOV R0,R1");
-            converter.AssemblyConvert("SHR R1, F");
-            
-            converter.AssemblyConvert("RTI");
-            converter.AssemblyConvert("JZ R0");
-            
-            converter.AssemblyConvert("SETC");
-            converter.AssemblyConvert("INC R1");
-
-            converter.AssemblyConvert("PUSH R0");
-            converter.AssemblyConvert("LDD R1, 2FE");
             
             string filename = Path.Combine(Environment.CurrentDirectory, "test-cases\\Branch.asm");
             
