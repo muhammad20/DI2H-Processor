@@ -41,7 +41,7 @@ signal regFileOutData1, regFileOutData2: std_logic_vector(15 downto 0);
 
 signal decExBuffDataIn, decExBuffDataOut: std_logic_vector(129 downto 0);
 
-signal exMemBuffDataIn, exMemBuffDataOut: std_logic_vector(166 downto 0);
+signal exMemBuffDataIn, exMemBuffDataOut: std_logic_vector(165 downto 0);
 
 signal dec_ex_src_addr, dec_ex_dst_addr: std_logic_vector(2 downto 0);
 signal dec_ex_src_val, dec_ex_dst_val: std_logic_vector(15 downto 0);
@@ -116,8 +116,6 @@ ALU: entity work.ArithmeticLogicUnit port map(decExBuffDataOut(15), clock, reset
  decExBuffDataOut(127 downto 124), alu_result, flags_result);
 
 program_counter<=fromFetch;
-
-
 
 end Architecture;
 
