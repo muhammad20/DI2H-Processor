@@ -19,7 +19,7 @@ entity mem_ram is
 
 	clk, rst, wen: in std_logic;
 
-	data_out: out std_logic_vector(n-1 downto 0));
+	data_out, mem0, mem1: out std_logic_vector(n-1 downto 0));
 
 end entity;
 
@@ -44,5 +44,9 @@ architecture ramArch of mem_ram is
 	end process;
 
 	data_out <= s_ram(to_integer(unsigned(address)));
+
+	mem0 <= s_ram(0);
+
+	mem1 <= s_ram(1);
 
 end architecture;

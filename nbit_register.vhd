@@ -23,3 +23,4 @@ architecture registerarch of nbit_register is
         end process;
 end architecture;
 
+
