@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace Assembler
 {
@@ -21,16 +22,57 @@ namespace Assembler
 
             converter.AssemblyConvert("PUSH R0");
             converter.AssemblyConvert("LDD R1, 2FE");
-            // string filename = args[0];
+            
+            string filename = Path.Combine(Environment.CurrentDirectory, "test-cases\\Branch.asm");
+            
+            string outputFilename = Path.Combine(Environment.CurrentDirectory, "output\\Branch.hex");
+
             // // Okay so we need to parse the input file.
-            // using(var reader = new StreamReader(filename))
-            // {
-            //     // Get each line of the instructions, this is still assembly code.
-            //     var assemblyInstruction = reader.ReadLine();
-                
-            //     // Convert this to our memory code.
-                
-            // }
+            using(var reader = new StreamReader(filename))
+            using(var writer = new StreamWriter(outputFilename))
+            {
+                while(!reader.EndOfStream)
+                {
+                    // Get each line of the instructions, this is still assembly code.
+                    var assemblyInstruction = reader.ReadLine();
+                    
+                    // Ignore comment lines
+                    if(assemblyInstruction == "" || assemblyInstruction[0] == '#')
+                    {
+                        continue;
+                    }
+
+                    // Remove white spaces.
+
+                    // Check if this is org
+                    if(assemblyInstruction.ToUpper().StartsWith(".ORG"))
+                    {
+                        var lines = assemblyInstruction.Split(' ');
+                        var hex = Convert.ToInt32(lines[1], 16);
+
+                        writer.WriteLine(hex.ToString("X4"));
+
+                        continue;
+                    }
+
+                    if(int.TryParse(assemblyInstruction, out int bl))
+                    {
+                        continue;
+                    }
+
+                    if(assemblyInstruction.Contains('#'))
+                    {
+                        assemblyInstruction = assemblyInstruction.Substring(0, assemblyInstruction.IndexOf('#'));
+                    }
+                    if(assemblyInstruction.All(x => x == ' '))
+                    {
+                        continue;
+                    }
+                    // Convert this to our memory code.
+                    var machineCode = converter.AssemblyConvert(assemblyInstruction, true);
+                    writer.WriteLine(machineCode.PadLeft(4, '0'));   
+                }
+            }
         }
     }
 
@@ -201,9 +243,9 @@ namespace Assembler
                 machineCode = machineCode.PadRight(16, '0');
             } else 
             {
-                machineCode = machineCode.PadRight(32, '0');
+                machineCode = machineCode.PadRight(31, '0');
                 string firstMemoryLocation = machineCode.Substring(0, 16);
-                string secondMemoryLocation = machineCode.Substring(16, 16);
+                string secondMemoryLocation = machineCode.Substring(15, 16);
                 machineCode = firstMemoryLocation + "\n" + secondMemoryLocation;
             }
 
