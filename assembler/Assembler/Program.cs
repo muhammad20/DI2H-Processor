@@ -7,6 +7,7 @@ namespace Assembler
 {
     class Program
     {
+        private const double LASTMEMORYPOSITION = 1048575;
         static void Main(string[] args)
         {   
             var converter = new AssemblyConverter();
@@ -15,6 +16,7 @@ namespace Assembler
             
             string outputFilename = Path.Combine(Environment.CurrentDirectory, "output\\Branch.hex");
 
+            int i = 0;
             // // Okay so we need to parse the input file.
             using(var reader = new StreamReader(filename))
             using(var writer = new StreamWriter(outputFilename))
@@ -58,7 +60,13 @@ namespace Assembler
                     }
                     // Convert this to our memory code.
                     var machineCode = converter.AssemblyConvert(assemblyInstruction, true);
-                    writer.WriteLine(machineCode.PadLeft(4, '0'));   
+                    writer.WriteLine($"{i}: {machineCode.PadLeft(4, '0')}");
+                    i++;
+                }
+
+                while(i < LASTMEMORYPOSITION)
+                {
+                    writer.WriteLine($"{i++}: {converter.AssemblyConvert("NOP", true).PadLeft(4, '0')}");
                 }
             }
         }
