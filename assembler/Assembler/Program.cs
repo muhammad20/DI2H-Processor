@@ -11,13 +11,16 @@ namespace Assembler
             var converter = new AssemblyConverter();
             
             converter.AssemblyConvert("MOV R0,R1");
-            converter.AssemblyConvert("SHR R1, 15");
+            converter.AssemblyConvert("SHR R1, F");
             
             converter.AssemblyConvert("RTI");
             converter.AssemblyConvert("JZ R0");
             
             converter.AssemblyConvert("SETC");
             converter.AssemblyConvert("INC R1");
+
+            converter.AssemblyConvert("PUSH R0");
+            converter.AssemblyConvert("LDD R1, 2FE");
             // string filename = args[0];
             // // Okay so we need to parse the input file.
             // using(var reader = new StreamReader(filename))
@@ -31,7 +34,7 @@ namespace Assembler
         }
     }
 
-    class AssemblyConverter
+    public class AssemblyConverter
     {
         private Dictionary<string, string> _opCodeLookup;
         private Dictionary<string, string> _registerLookup;
@@ -47,56 +50,59 @@ namespace Assembler
 
         private void InitializeRegisterLookup()
         {
-            _registerLookup = new Dictionary<string, string>();
-
-            _registerLookup["R0"] = "000";
-            _registerLookup["R1"] = "001";
-            _registerLookup["R2"] = "010";
-            _registerLookup["R3"] = "011";
-            _registerLookup["R4"] = "100";
-            _registerLookup["R5"] = "101";
-            _registerLookup["R6"] = "110";
-            _registerLookup["R7"] = "111";
+            _registerLookup = new Dictionary<string, string>
+            {
+                ["R0"] = "000",
+                ["R1"] = "001",
+                ["R2"] = "010",
+                ["R3"] = "011",
+                ["R4"] = "100",
+                ["R5"] = "101",
+                ["R6"] = "110",
+                ["R7"] = "111"
+            };
         }
         private void InitializeOpCodeLookup()
         {
-            _opCodeLookup = new Dictionary<string, string>();
-            
-            // M-Type Instructions.
-            _opCodeLookup["PUSH"] = "00000";
-            _opCodeLookup["POP"] =  "00001";
-            _opCodeLookup["LDD"] =  "00111";
-            _opCodeLookup["LDM"] =  "00011";
-            _opCodeLookup["STD"] =  "00100";
-            _opCodeLookup["IN"] =   "00101";
-            _opCodeLookup["OUT"] =  "00110";
-            
-            // J-Type Instructions.
-            _opCodeLookup["JZ"] =   "01001";
-            _opCodeLookup["JN"] =   "01010";
-            _opCodeLookup["JC"] =   "01011";
-            _opCodeLookup["CALL"] = "01100";
-            _opCodeLookup["JMP"] =  "01101";
-            _opCodeLookup["RET"] =  "01110";
-            _opCodeLookup["RTI"] =  "01111";
+            _opCodeLookup = new Dictionary<string, string>
+            {
 
-            // H-Type Instructions
-            _opCodeLookup["MOV"] = "10000";
-            _opCodeLookup["ADD"] = "10001";
-            _opCodeLookup["SUB"] = "10010";
-            _opCodeLookup["MUL"] = "10011";
-            _opCodeLookup["AND"] = "10100";
-            _opCodeLookup["OR"]  = "10101";
-            _opCodeLookup["SHL"] = "10110";
-            _opCodeLookup["SHR"] = "10111";
+                // M-Type Instructions.
+                ["PUSH"] = "00000",
+                ["POP"] = "00001",
+                ["LDD"] = "00111",
+                ["LDM"] = "00011",
+                ["STD"] = "00100",
+                ["IN"] = "00101",
+                ["OUT"] = "00110",
 
-            // X-Type Instructions
-            _opCodeLookup["NOT"] =  "11000";
-            _opCodeLookup["SETC"] = "11001";
-            _opCodeLookup["CLRC"] = "11010";
-            _opCodeLookup["NOP"]  = "11011";
-            _opCodeLookup["INC"]  = "11100";
-            _opCodeLookup["DEC"]  = "11101";
+                // J-Type Instructions.
+                ["JZ"] = "01001",
+                ["JN"] = "01010",
+                ["JC"] = "01011",
+                ["CALL"] = "01100",
+                ["JMP"] = "01101",
+                ["RET"] = "01110",
+                ["RTI"] = "01111",
+
+                // H-Type Instructions
+                ["MOV"] = "10000",
+                ["ADD"] = "10001",
+                ["SUB"] = "10010",
+                ["MUL"] = "10011",
+                ["AND"] = "10100",
+                ["OR"] = "10101",
+                ["SHL"] = "10110",
+                ["SHR"] = "10111",
+
+                // X-Type Instructions
+                ["NOT"] = "11000",
+                ["SETC"] = "11001",
+                ["CLRC"] = "11010",
+                ["NOP"] = "11011",
+                ["INC"] = "11100",
+                ["DEC"] = "11101"
+            };
         }
 
         /// <summary> 
@@ -104,7 +110,7 @@ namespace Assembler
         /// <param name="assembly">The whole instruction in assembly language</param>
         /// </summary>
         /// <returns>Returns a string of 0s and 1s representing the machine code </returns>  
-        public string AssemblyConvert(string assembly)
+        public string AssemblyConvert(string assembly, bool hex = false)
         {
             string machineCode = "";
             
@@ -113,7 +119,7 @@ namespace Assembler
             machineCode += _opCodeLookup[opCode.ToUpper()];
 
             // Check the type and identify the missing bits and pieces.
-            var typeCode = $"{machineCode[0]}" + $"{machineCode[1]}";
+            var typeCode = machineCode.Substring(0, 2);
 
             // Extract the instruction parts
             var instructionParts = this.ExtractInstructionParts(assembly);
@@ -123,7 +129,28 @@ namespace Assembler
             switch (typeCode)
             {
                 case "00":
+                    machineCode += _registerLookup[instructionParts[0]];
 
+                    if(instructionParts.Length > 1)
+                    {
+                        hasNext = true;
+                        if(opCode == "LDM")
+                        {
+
+                            // It has an immediate value.
+                            string binary = HexToBinary(instructionParts[1], 16);
+                            machineCode += binary;
+                        }else 
+                        {
+                            string binary = HexToBinary(instructionParts[1] , 20);
+
+                            if(binary.Length > 20)
+                            {
+                                throw new Exception("Invalid ");
+                            }
+                            machineCode += binary;
+                        }
+                    }
                     break;
                 case "01":
                     
@@ -144,11 +171,10 @@ namespace Assembler
                     machineCode += _registerLookup[instructionParts[0]];
                     
                     // Shift instructions will use one register.
-                    int immediateValue;
-                    if(int.TryParse(instructionParts[1] , out immediateValue))
+                    if(instructionParts[1][0] != 'R')
                     {
                         machineCode += "000";
-                        string immediateValueBinary = Convert.ToString(immediateValue, 2);
+                        string immediateValueBinary = HexToBinary(instructionParts[1], 4);
                         if(immediateValueBinary.Length > 4)
                         {
                             throw new Exception("Invalid shift amount");
@@ -175,13 +201,16 @@ namespace Assembler
                 machineCode = machineCode.PadRight(16, '0');
             } else 
             {
-
+                machineCode = machineCode.PadRight(32, '0');
+                string firstMemoryLocation = machineCode.Substring(0, 16);
+                string secondMemoryLocation = machineCode.Substring(16, 16);
+                machineCode = firstMemoryLocation + "\n" + secondMemoryLocation;
             }
 
             char[] arr = machineCode.ToCharArray();
             arr[15] = (char)(hasNext ? '1' : '0');
             machineCode = new string(arr);
-            return machineCode;         
+            return hex? Convert.ToInt64(machineCode , 2).ToString("X") : machineCode;         
         }
 
         private string ExtractOpCode(string assembly)
@@ -208,6 +237,12 @@ namespace Assembler
                 }
             }
             return instructionParts;
+        }
+
+        private string HexToBinary(string hexString, int padding = 0)
+        {
+            string binary = Convert.ToString(Convert.ToInt64(hexString, 16), 2);
+            return padding == 0 ? binary : binary.PadLeft(padding ,'0');
         }
     }
 }
