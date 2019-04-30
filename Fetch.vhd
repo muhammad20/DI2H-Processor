@@ -6,9 +6,11 @@ use ieee.numeric_std.all;
 
 entity FetchUnit is
 port( 	clock, fetch_enable, reset, pc_change_enable, int:in std_logic;
-	instruction_selectors : in std_logic_vector(1 downto 0);
+	branch_result : in std_logic;
+	memory0_location: in std_logic_vector(31 downto 0);
 	memory1_location : in std_logic_vector(31 downto 0); -- instruction in memory[1] location
-	instruction_in : in std_logic_vector(31 downto 0);
+	instruction_in_32_16 : in std_logic_vector(15 downto 0);
+	instruction_in_15_0 : in std_logic_vector(15 downto 0);
 	new_pc : in std_logic_vector(31 downto 0);
 	program_counter: out std_logic_vector(31 downto 0);
 	instruction_out: out std_logic_vector(31 downto 0)
@@ -43,36 +45,40 @@ signal countChoice : std_logic_vector(31 downto 0); --an output from the 4x1 mux
 signal programCount : std_logic_vector(31 downto 0); --an output from the register that stores the program counter
 signal pcChosen : std_logic_vector(31 downto 0); --The input to the register coming from a 2X1 mux between int instruction or the chosen instruction
 signal nopInstruction : std_logic_vector(31 downto 0);
-signal instructionIn : std_logic_vector(31 downto 0);
+signal instructionIn32 : std_logic_vector(15 downto 0);
+signal instructionIn16 : std_logic_vector(15 downto 0);
 signal instructionOut: std_logic_vector(31 downto 0);
 
 begin
 process(clock, reset)
 begin
 	if (reset = '1') then
-		instructionIn <= nopInstruction;
+		instructionIn32 <= memory0_location(31 downto 16);
+		instructionIn16 <= memory0_location(15 downto 0);
  		programCount<=(Others=>'0');
 	elsif(rising_edge(clock) and fetch_enable = '1') then
+		instructionIn32<=instruction_in_32_16;
+		instructionIn16<=instruction_in_15_0;
+	elsif(falling_edge(clock) and fetch_enable = '1') then
 		programCount<= pcChosen;	
-		instructionIn<=instruction_in;
 		
 	end if;
 end process;
-
+nopInstruction <= "00000000000000001101100000000000";
 program_counter <= programCount when fetch_enable='1' and pc_change_enable = '1';
 instruction_out<=nopInstruction when fetch_enable='0' else 
-		 instructionregisterSignal;
-nopInstruction <= "00000000000000001101100000000000";
+		 instructionIn32 & instructionIn16 when fetch_enable = '1' and instructionIn32(0) = '1'  else
+		 "0000000000000000"&instructionIn32 when fetch_enable = '1' and instructionIn32(0) = '0'  ;
 
-instructionTristate: tristate generic map(32) port map(instructionIn,instructionRegisterSignal, fetch_enable);
 
+instructionTristate: tristate generic map(16) port map(instruction_in_32_16,instructionIn32, fetch_enable);
+instructionTristate1: tristate generic map(16) port map(instruction_in_15_0,instructionIn16, fetch_enable);
 --pcRegister : nbit_register generic map(32) port map(pcChosen,clock, reset, fetch_enable,programCount);
 
 
-countChoice<= 	pc1 	when fetch_enable = '1' and instruction_selectors="00" 	else
-		pc2 	when fetch_enable = '1' and instruction_selectors="01" 	else
-		new_pc 	when fetch_enable = '1' and instruction_selectors ="10" else
-		new_pc 	when fetch_enable = '1' and instruction_selectors ="11";
+countChoice<= 	pc1 	when fetch_enable = '1' and branch_result='0' and instructionIn32(0) = '0' else
+		pc2 	when fetch_enable = '1' and branch_result='0' and instructionIn32(0) = '1' else
+		new_pc 	when fetch_enable = '1' and branch_result ='1';
 
 pcChosen <=	countChoice when fetch_enable='1' and int ='0' else 
 		memory1_location when fetch_enable='1' and int = '1';		
