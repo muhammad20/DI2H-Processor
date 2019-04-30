@@ -14,7 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\Documents\Gam3a\Senior 1\Semester 8\Arch\Project\DI2H-Processor\assembler\Assembler\Assembler.csproj" />
+    <ProjectReference Include="..\Assembler\Assembler.csproj" />
   </ItemGroup>
 
 </Project>
