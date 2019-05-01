@@ -49,16 +49,19 @@ signal instructionIn32 : std_logic_vector(15 downto 0);
 signal instructionIn16 : std_logic_vector(15 downto 0);
 signal instructionOut: std_logic_vector(31 downto 0);
 signal pcEnable: std_logic;
+Signal bit15 : std_logic;
 begin
 process(clock, reset)
 begin
 	if (reset = '1') then
 		instructionIn32 <= memory0_location(31 downto 16);
 		instructionIn16 <= memory0_location(15 downto 0);
- 		--programCount<=(Others=>'0');
+		bit15 <= '0'; 		
+		--programCount<=(Others=>'0');
 	elsif(rising_edge(clock) and fetch_enable = '1') then
-		instructionIn32<=instruction_in_32_16;
-		instructionIn16<=instruction_in_15_0;
+		instructionIn32 <= instruction_in_32_16;
+		instructionIn16 <= instruction_in_15_0;
+		bit15 <= instruction_in_32_16(0);
 --	elsif(falling_edge(clock) and fetch_enable = '1') then
 		--programCount<= pcChosen;	
 	end if;
@@ -70,15 +73,16 @@ instruction_out <= nopInstruction when fetch_enable='0' else
 		 "0000000000000000"&instructionIn32 when fetch_enable = '1' and instructionIn32(0) = '0'  ;
 pcEnable<=(fetch_enable and pc_change_enable);
 
-instructionTristate: tristate generic map(16) port map(instruction_in_32_16,instructionIn32, fetch_enable);
-instructionTristate1: tristate generic map(16) port map(instruction_in_15_0,instructionIn16, fetch_enable);
+instructionTristate: nbit_register generic map(16) port map(instruction_in_32_16,clock, reset,fetch_enable, instructionIn32);
+instructionTristate1: nbit_register generic map(16) port map(instruction_in_15_0, clock, reset, fetch_enable, instructionIn16);
 
 pcRegister : nbit_register generic map(32) port map(pcChosen,clock, reset, pcEnable, programCount);
 program_counter <= programCount;
 
-countChoice	<= 	pc1 when fetch_enable = '1' and branch_result='0' and instructionIn32(0) = '0' else
-				pc2 when fetch_enable = '1' and branch_result='0' and instructionIn32(0) = '1' else
-				new_pc when fetch_enable = '1' and branch_result ='1';
+countChoice	<= 	pc1 when fetch_enable = '1' and branch_result='0' and bit15 = '0' else
+				pc2 when fetch_enable = '1' and branch_result='0' and bit15 = '1' else
+				new_pc when fetch_enable = '1' and branch_result ='1'
+			else (others=>'0');
 
 pcChosen <=	countChoice when fetch_enable='1' and int ='0' else 
 		memory1_location when fetch_enable='1' and int = '1';
