@@ -7,7 +7,8 @@ entity Control_Unit is
 port(
 opcode: in std_logic_vector (4 downto 0);
 opcodeout: out std_logic_vector (4 downto 0);
-ALU_Src,WB_En,ALU_En,Jmp,MemtoReg,MemWr,MemRd,Push_Sig,Pop_Sig: out std_logic);
+ALU_Src,WB_En,ALU_En,Jmp,MemtoReg,MemWr,MemRd,Push_Sig,Pop_Sig, 
+setc, clrc, not_op, inc, dec, multiply, h_type: out std_logic);
 
 end entity;
 
@@ -21,6 +22,14 @@ port(in1,in2,in3,in4: in std_logic;
 end component;
 signal in1,in2,in3,in4,x,y,wb1: std_logic;
 begin
+
+setc <= '1' when opcode = "11001" else '0';
+clrc <= '1' when opcode = "11010" else '0';
+not_op <= '1' when opcode = "11000" else '0';
+inc <= '1' when opcode = "11100" else '0';
+dec <= '1' when opcode = "11101" else '0'; 
+multiply <= '1' when opcode = "10011" else '0';
+h_type <= opcode(4) and not opcode(3);
 
 opcodeout<=opcode;
 

@@ -29,7 +29,8 @@ signal opcode: std_logic_vector(4 downto 0);
 
 
 signal alu_src, wb_en, alu_en, jmp_en, memToReg, 
-memWrite, MemRead, push_sig, pop_sig, ret_rti, jmp_result, multiply: std_logic;
+memWrite, MemRead, push_sig, pop_sig, ret_rti, jmp_result, 
+multiply, setc, clrc, inc, dec, not_op, h_type: std_logic;
 
 signal jmp_type: std_logic_vector(1 downto 0);
 signal dec_ex_effective_address,
@@ -39,7 +40,7 @@ signal dec_ex_sp: std_logic_vector(31 downto 0);
 
 signal regFileOutData1, regFileOutData2: std_logic_vector(15 downto 0); 
 
-signal decExBuffDataIn, decExBuffDataOut: std_logic_vector(129 downto 0);
+signal decExBuffDataIn, decExBuffDataOut: std_logic_vector(135 downto 0);
 
 signal exMemBuffDataIn, exMemBuffDataOut: std_logic_vector(165 downto 0);
 
@@ -65,6 +66,12 @@ readAddress2 <= bufferedInstruction(7 downto 5);
 writeAddress <= bufferedInstruction(10 downto 8);
  
 ---- Decode to Execute data buffer
+decExBuffDataIn(135) <= h_type;
+decExBuffDataIn(134) <= not_op;
+decExBuffDataIn(133) <= clrc;
+decExBuffDataIn(132) <= setc;
+decExBuffDataIn(131) <= dec;
+decExBuffDataIn(130) <= inc;
 decExBuffDataIn(129) <= multiply; -- Should be output from the decode circuit
 decExBuffDataIn(128 downto 125) <= sh_amount;
 decExBuffDataIn(124 downto 120) <= opcode;
@@ -105,7 +112,8 @@ clock, fetch_dec_buffRst, fetch_dec_buffEn, bufferedInstruction);
 
 controlUnit: entity work.Control_Unit port map(bufferedInstruction(15 downto 11),
 opcode, alu_src, wb_en, alu_en, jmp_en, 
-memToReg, memWrite, MemRead, push_sig, pop_sig);
+memToReg, memWrite, MemRead, push_sig, pop_sig, 
+setc, clrc, not_op, inc, dec, multiply, h_type);
 
 registerFile: entity work.Register_File port map(regFileRead, regFileWrite, 
 clock, reset, readAddress1, readAddress2, writeAddress, 
@@ -116,6 +124,8 @@ decodeExecuteBuff: entity work.nbit_register generic map(130) port map(decExBuff
 executeMemoryBuff: entity work.nbit_register generic map(166) port map(exMemBuffDataIn, clock, reset,'1', exMemBuffDataOut);
 
 ALU: entity work.ArithmeticLogicUnit port map(decExBuffDataOut(15), clock, reset,
+decExBuffDataOut(132),decExBuffDataOut(133),decExBuffDataOut(130),
+decExBuffDataOut(131),decExBuffDataOut(134),decExBuffDataOut(135), 
  decExBuffDataOut(121 downto 119), decExBuffDataOut(33 downto 18), decExBuffDataOut(15 downto 0),
  decExBuffDataOut(128 downto 125), alu_result, flags_result);
 
