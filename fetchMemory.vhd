@@ -48,7 +48,7 @@ signal dec_ex_src_val, dec_ex_dst_val: std_logic_vector(15 downto 0);
 signal sh_amount: std_logic_vector(3 downto 0);
 signal alu_result: std_logic_vector(31 downto 0);
 signal flags_result: std_logic_vector(2 downto 0); -- Z N C
-signal mem_zero,mem_one: std_logic_vector(31 downto 0); -- Memory(0) instruction and Memory(1) instruction
+signal mem_zero,mem_one: std_logic_vector(15 downto 0); -- Memory(0) instruction and Memory(1) instruction
 
 begin
 
@@ -56,11 +56,15 @@ fetch_dec_buffRst <= reset;
 fetch_dec_buffEn <= '1';
 dec_ex_buffRst <= reset;
 dec_ex_buffEn <= '1';
+jmp_result <= '0';
 
+---- 
+sh_amount <= bufferedInstruction(4 downto 1);
 readAddress1 <= bufferedInstruction(10 downto 8);
 readAddress2 <= bufferedInstruction(7 downto 5);
 writeAddress <= bufferedInstruction(7 downto 5);
  
+---- Decode to Execute data buffer
 decExBuffDataIn(129) <= multiply; -- Should be output from the decode circuit
 decExBuffDataIn(128 downto 125) <= sh_amount;
 decExBuffDataIn(124 downto 120) <= opcode;
@@ -73,7 +77,7 @@ decExbuffDataIn(69 downto 38) <= dec_ex_sp;
 decExBuffDataIn(37 downto 19) <= dec_ex_src_addr & dec_ex_src_val;
 decExBuffDataIn(18 downto 0) <= dec_ex_dst_addr & dec_ex_dst_val;
 
-
+---- Execute to Memory Data Buffer
 exMemBuffDataIn(165 downto 134)<= alu_result;
 exMemBuffDataIn(133 downto 131) <= flags_result;
 exMemBuffDataIn(130 downto 125) <= decExBuffDataOut(119 downto 116) & decExBuffDataOut(110) & jmp_result; --Memrd, memwr, memtoreg, wb_en, ret_rti, jmp_enable
@@ -87,12 +91,12 @@ exMemBuffDataIn(13 downto 0)<= (others=>'0');
 
 tristateBuffer: entity work.tristate port map(fromMemory,dataBus,fetch_enable);
 
-memory: entity work.memory_unit generic map(32,20) port map(fromMemory,mem_zero, mem_one,
-fromFetch(19 downto 0),clock,reset,mem_write, mem_read);
+memory: entity work.memory_unit generic map(16,20) port map(fromMemory(31 downto 16),mem_zero, mem_one, 
+fromMemory(15 downto 0), fromFetch(19 downto 0),clock,reset,mem_write, mem_read);
 
 fetch: entity work.FetchUnit port map(clock, fetch_enable, reset,'1','0', 
 jmp_result,mem_zero,mem_one,
-fromMemory(15 downto 0),fromMemory(31 downto 16), new_pc, 
+fromMemory(31 downto 16),fromMemory(15 downto 0), new_pc, 
 fromFetch, fetchedInstruction); --JMP_RESULT should come from the buffer 
 
 fetchDecodeBuff: entity work.nbit_register generic map(32) port map(
@@ -113,7 +117,7 @@ executeMemoryBuff: entity work.nbit_register generic map(166) port map(exMemBuff
 
 ALU: entity work.ArithmeticLogicUnit port map(decExBuffDataOut(15), clock, reset,
  decExBuffDataOut(121 downto 119), decExBuffDataOut(33 downto 18), decExBuffDataOut(15 downto 0),
- decExBuffDataOut(127 downto 124), alu_result, flags_result);
+ decExBuffDataOut(128 downto 125), alu_result, flags_result);
 
 program_counter<=fromFetch;
 

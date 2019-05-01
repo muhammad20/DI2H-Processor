@@ -6,3 +6,8 @@ mem load -filltype value -filldata A060 -fillradix hexadecimal /fetchmemoryunit/
 mem load -filltype value -filldata AAA0 -fillradix hexadecimal /fetchmemoryunit/memory/r0/s_ram(5)
 mem load -filltype value -filldata B314 -fillradix hexadecimal /fetchmemoryunit/memory/r0/s_ram(6)
 mem load -filltype value -filldata BF06 -fillradix hexadecimal /fetchmemoryunit/memory/r0/s_ram(7)
+
+force -freeze sim:/fetchmemoryunit/clock 1 0, 0 {50 ps} -r 100
+force -freeze sim:/fetchmemoryunit/reset 1 0
+force -freeze sim:/fetchmemoryunit/fetch_enable 1 0
+force -freeze sim:/fetchmemoryunit/mem_read 1 0

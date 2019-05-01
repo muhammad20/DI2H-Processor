@@ -7,8 +7,8 @@ use ieee.numeric_std.all;
 entity FetchUnit is
 port( 	clock, fetch_enable, reset, pc_change_enable, int:in std_logic;
 	branch_result : in std_logic;
-	memory0_location: in std_logic_vector(31 downto 0);
-	memory1_location : in std_logic_vector(31 downto 0); -- instruction in memory[1] location
+	memory0_instr: in std_logic_vector(15 downto 0);
+	memory1_instr : in std_logic_vector(15 downto 0); -- instruction in memory[1] location
 	instruction_in_32_16 : in std_logic_vector(15 downto 0);
 	instruction_in_15_0 : in std_logic_vector(15 downto 0);
 	new_pc : in std_logic_vector(31 downto 0);
@@ -54,8 +54,8 @@ begin
 process(clock, reset)
 begin
 	if (reset = '1') then
-		instructionIn32 <= memory0_location(31 downto 16);
-		instructionIn16 <= memory0_location(15 downto 0);
+		instructionIn32 <= memory0_instr;
+		instructionIn16 <= X"0000";
 		bit15 <= '0'; 		
 		--programCount<=(Others=>'0');
 	elsif(rising_edge(clock) and fetch_enable = '1') then
@@ -85,7 +85,7 @@ countChoice	<= 	pc1 when fetch_enable = '1' and branch_result='0' and bit15 = '0
 			else (others=>'0');
 
 pcChosen <=	countChoice when fetch_enable='1' and int ='0' else 
-		memory1_location when fetch_enable='1' and int = '1';
+		X"00000001" when fetch_enable='1' and int = '1';
 
 pc1 <= std_logic_vector(to_signed(to_integer(unsigned(programCount)+1),32));
 pc2 <= std_logic_vector(to_signed(to_integer(unsigned(programCount)+2),32));

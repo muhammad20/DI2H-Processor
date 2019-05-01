@@ -19,7 +19,7 @@ entity mem_ram is
 
 	clk, rst, wen: in std_logic;
 
-	data_out, mem0, mem1: out std_logic_vector(n-1 downto 0));
+	data_out, long_instr_data, mem0, mem1: out std_logic_vector(n-1 downto 0));
 
 end entity;
 
@@ -30,6 +30,7 @@ architecture ramArch of mem_ram is
     type ram is array(0 to 2**m-1) of std_logic_vector(n-1 downto 0);
 
     signal s_ram: ram;
+	signal long_instr_addr: std_logic_vector(m-1 downto 0);
 
     begin
 
@@ -44,6 +45,8 @@ architecture ramArch of mem_ram is
 	end process;
 
 	data_out <= s_ram(to_integer(unsigned(address)));
+	long_instr_addr <= std_logic_vector(to_signed(to_integer(unsigned(address)+1),m));
+	long_instr_data <= s_ram(to_integer(unsigned(long_instr_addr)));
 
 	mem0 <= s_ram(0);
 
