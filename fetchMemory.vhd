@@ -92,7 +92,7 @@ fromFetch(19 downto 0),clock,reset,mem_write, mem_read);
 
 fetch: entity work.FetchUnit port map(clock, fetch_enable, reset,'1','0', 
 jmp_result,mem_zero,mem_one,
-fromMemory(31 downto 16),fromMemory(15 downto 0), new_pc, 
+fromMemory(15 downto 0),fromMemory(31 downto 16), new_pc, 
 fromFetch, fetchedInstruction); --JMP_RESULT should come from the buffer 
 
 fetchDecodeBuff: entity work.nbit_register generic map(32) port map(
