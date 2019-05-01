@@ -62,7 +62,7 @@ jmp_result <= '0';
 sh_amount <= bufferedInstruction(4 downto 1);
 readAddress1 <= bufferedInstruction(10 downto 8);
 readAddress2 <= bufferedInstruction(7 downto 5);
-writeAddress <= bufferedInstruction(7 downto 5);
+writeAddress <= bufferedInstruction(10 downto 8);
  
 ---- Decode to Execute data buffer
 decExBuffDataIn(129) <= multiply; -- Should be output from the decode circuit
