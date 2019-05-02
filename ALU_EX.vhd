@@ -37,12 +37,13 @@ begin
 		destination<="0000000000000000"&dest;
 		source <="0000000000000000"&src;
 	else 
-		if (alu_enable='1' and falling_edge(clock) and h_type='1') then
+		if (alu_enable='1' and rising_edge(clock)) then
 				destination<="0000000000000000"&dest;
 				carry<='0';
 				zero<='0';
 				negative<='0';
 				source <="0000000000000000"&src;
+			if(h_type ='1') then
 				if  (operation =   "001"  ) then
 					--ADDITION
 					result <=  std_logic_vector(to_signed(to_integer(unsigned(source)+unsigned(destination)),32));
@@ -71,16 +72,18 @@ begin
 				else
 					result<= source;
 				end if;
-				elsif (alu_enable='1' and falling_edge(clock) and h_type='0') then
+				elsif (h_type='0') then
 				if (setc = '1') then carry <= '1'; end if;
 				if (clrc = '1') then carry <= '0'; end if;
 				if(not_op = '1') then result <= not source; end if;
 				if (inc = '1') then result <= std_logic_vector(to_signed(to_integer(unsigned(destination) + unsigned(one)),32)); end if;
 				if (dec = '1') then result <= std_logic_vector(to_signed(to_integer(unsigned(destination) - unsigned(one)),32)); end if;
 		end if;
+		end if;
 	end if;
 end process;
 output<=result;
+one <= X"00000001";
 flags <= zero & negative & carry;
 zero <= '1' when result(15 downto 0) = X"0000" 
 		else '0';

@@ -51,6 +51,8 @@ signal alu_result: std_logic_vector(31 downto 0);
 signal flags_result: std_logic_vector(2 downto 0); -- Z N C
 signal mem_zero,mem_one: std_logic_vector(15 downto 0); -- Memory(0) instruction and Memory(1) instruction
 
+signal buffsClk: std_logic;
+
 begin
 
 fetch_dec_buffRst <= reset;
@@ -58,6 +60,7 @@ fetch_dec_buffEn <= '1';
 dec_ex_buffRst <= reset;
 dec_ex_buffEn <= '1';
 jmp_result <= '0';
+buffsClk <= not clock;
 
 ---- 
 sh_amount <= bufferedInstruction(4 downto 1);
@@ -108,7 +111,7 @@ fromFetch, fetchedInstruction); --JMP_RESULT should come from the buffer
 
 fetchDecodeBuff: entity work.nbit_register generic map(32) port map(
 fetchedInstruction, 
-clock, fetch_dec_buffRst, fetch_dec_buffEn, bufferedInstruction);
+buffsClk, fetch_dec_buffRst, fetch_dec_buffEn, bufferedInstruction);
 
 controlUnit: entity work.Control_Unit port map(bufferedInstruction(15 downto 11),
 opcode, alu_src, wb_en, alu_en, jmp_en, 
@@ -120,13 +123,13 @@ clock, reset, readAddress1, readAddress2, writeAddress,
 regInData, regFileOutData1, regFileOutData2);
 
 
-decodeExecuteBuff: entity work.nbit_register generic map(130) port map(decExBuffDataIn, clock, reset,'1', decExBuffDataOut);
-executeMemoryBuff: entity work.nbit_register generic map(166) port map(exMemBuffDataIn, clock, reset,'1', exMemBuffDataOut);
+decodeExecuteBuff: entity work.nbit_register generic map(136) port map(decExBuffDataIn, buffsClk, reset,'1', decExBuffDataOut);
+executeMemoryBuff: entity work.nbit_register generic map(166) port map(exMemBuffDataIn, buffsClk, reset,'1', exMemBuffDataOut);
 
-ALU: entity work.ArithmeticLogicUnit port map(decExBuffDataOut(15), clock, reset,
+ALU: entity work.ArithmeticLogicUnit port map(decExBuffDataOut(115), clock, reset,
 decExBuffDataOut(132),decExBuffDataOut(133),decExBuffDataOut(130),
 decExBuffDataOut(131),decExBuffDataOut(134),decExBuffDataOut(135), 
- decExBuffDataOut(121 downto 119), decExBuffDataOut(33 downto 18), decExBuffDataOut(15 downto 0),
+ decExBuffDataOut(122 downto 120), decExBuffDataOut(15 downto 0), decExBuffDataOut(34 downto 19),
  decExBuffDataOut(128 downto 125), alu_result, flags_result);
 
 program_counter<=fromFetch;

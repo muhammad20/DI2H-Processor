@@ -21,3 +21,22 @@ force -freeze sim:/fetchmemoryunit/clock 1 0, 0 {50 ps} -r 100
 force -freeze sim:/fetchmemoryunit/reset 1 0
 force -freeze sim:/fetchmemoryunit/fetch_enable 1 0
 force -freeze sim:/fetchmemoryunit/mem_read 1 0
+run
+mem load -filltype value -filldata E100 -fillradix hexadecimal /fetchmemoryunit/memory/r0/s_ram(0)
+
+force -freeze sim:/fetchmemoryunit/reset 0 0
+run
+run
+run
+
+//ALU
+force -freeze sim:/arithmeticlogicunit/alu_enable 1 0
+force -freeze sim:/arithmeticlogicunit/clock 1 0, 0 {50 ps} -r 100
+force -freeze sim:/arithmeticlogicunit/reset 1 0
+force -freeze sim:/arithmeticlogicunit/setc 1 0
+force -freeze sim:/arithmeticlogicunit/src 16'hABCD 0
+force -freeze sim:/arithmeticlogicunit/dest 16'h0001 0
+force -freeze sim:/arithmeticlogicunit/h_type 0 0
+run
+force -freeze sim:/arithmeticlogicunit/reset 0 0
+run
