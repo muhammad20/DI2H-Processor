@@ -15,9 +15,8 @@ end entity;
 architecture arch2 of Register_File is  
 
 signal endec_read1,endec_read2,endec_write: std_logic;
-signal output_read1,output_read2,output_write1,output4: std_logic_vector(7 downto 0);
+signal output_read1,output_read2,output_write1: std_logic_vector(7 downto 0);
 signal out1,out2,out3,out4,out5,out6,out7,out8: std_logic_vector(15 downto 0);
-signal outdata1,outdata2,outdata3,outdata4,outdata5,outdata6,outdata7,outdata8: std_logic_vector(15 downto 0); 
 
 begin
 
@@ -67,12 +66,9 @@ if(rst='1') then
 	else
     if(rising_edge(clk) and Write_Sig='1') 
     then endec_write<='1';
-	endec_read1 <= '0';
-	endec_read2 <= '0';
     elsif (falling_edge(clk) and Read_Sig='1') 
         then endec_read2<='1';
 		endec_read1 <='1';
-		endec_write <= '0';
 end if;
 end if;
 end process;
