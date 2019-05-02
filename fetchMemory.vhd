@@ -42,7 +42,8 @@ signal regFileOutData1, regFileOutData2: std_logic_vector(15 downto 0);
 
 signal decExBuffDataIn, decExBuffDataOut: std_logic_vector(135 downto 0);
 
-signal exMemBuffDataIn, exMemBuffDataOut: std_logic_vector(165 downto 0);
+signal exMemBuffDataIn, exMemBuffDataOut: std_logic_vector(166 downto 0);
+signal MemWBBuffDataIn, MemWBBuffDataOut: std_logic_vector(39 downto 0);
 
 signal dec_ex_src_addr, dec_ex_dst_addr: std_logic_vector(2 downto 0);
 signal dec_ex_src_val, dec_ex_dst_val: std_logic_vector(15 downto 0);
@@ -85,6 +86,7 @@ decExBuffDataIn(37 downto 19) <= dec_ex_src_addr & dec_ex_src_val;
 decExBuffDataIn(18 downto 0) <= dec_ex_dst_addr & dec_ex_dst_val;
 
 ---- Execute to Memory Data Buffer
+exMemBuffDataIn(166)<= decExBuffDataOut(129);
 exMemBuffDataIn(165 downto 134)<= alu_result;
 exMemBuffDataIn(133 downto 131) <= flags_result;
 exMemBuffDataIn(130 downto 125) <= decExBuffDataOut(119 downto 116) & decExBuffDataOut(110) & jmp_result; --Memrd, memwr, memtoreg, wb_en, ret_rti, jmp_enable
@@ -95,6 +97,12 @@ exMemBuffDataIn(66 downto 35) <= decExbuffDataOut(69 downto 38); --SP
 exMemBuffDataIn(34 downto 15) <= decExBuffDataOut(109 downto 90); -- Effective Address
 exMemBuffDataIn(14) <= decExBuffDataOut(129);
 exMemBuffDataIn(13 downto 0)<= (others=>'0');
+
+---- Memory to write back buffer
+MemWBBuffDataIn(39) <= exMemBuffDataout(27);--WB
+MemWBBuffDataIn(38 downto 20) <=exMemBuffDataout(124 downto 106); --Dest address and value
+MemWBBuffDataIn(19 downto 1) <= exMemBuffDataout(105 downto 87);--Src address and value
+MemWBBuffDataIn(0)<= exMemBuffDataOut(166);--MUL
 
 tristateBuffer: entity work.tristate port map(fromMemory,dataBus,fetch_enable);
 
@@ -120,8 +128,9 @@ clock, reset, readAddress1, readAddress2, writeAddress,
 regInData, regFileOutData1, regFileOutData2);
 
 
-decodeExecuteBuff: entity work.nbit_register generic map(130) port map(decExBuffDataIn, clock, reset,'1', decExBuffDataOut);
-executeMemoryBuff: entity work.nbit_register generic map(166) port map(exMemBuffDataIn, clock, reset,'1', exMemBuffDataOut);
+decodeExecuteBuff: entity work.nbit_register generic map(136) port map(decExBuffDataIn, clock, reset,'1', decExBuffDataOut);
+executeMemoryBuff: entity work.nbit_register generic map(167) port map(exMemBuffDataIn, clock, reset,'1', exMemBuffDataOut);
+MemoryWritebackBuff: entity work.nbit_register generic map(40) port map(MemWBBuffDataIn, clock, reset,'1', MemWBBuffDataOut);
 
 ALU: entity work.ArithmeticLogicUnit port map(decExBuffDataOut(15), clock, reset,
 decExBuffDataOut(132),decExBuffDataOut(133),decExBuffDataOut(130),
@@ -132,4 +141,7 @@ decExBuffDataOut(131),decExBuffDataOut(134),decExBuffDataOut(135),
 program_counter<=fromFetch;
 
 end Architecture;
+
+
+
 
