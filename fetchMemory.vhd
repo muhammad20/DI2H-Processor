@@ -104,7 +104,7 @@ exMemBuffDataIn(13 downto 0)<= (others=>'0');
 ---- Memory to write back buffer
 MemWBBuffDataIn(74 downto 72) <= exMemBuffDataOut(105 downto 103); -- DST address
 MemWBBuffDataIn(71 downto 40) <= exMembuffDataOut(165 downto 134); -- ALU result
-MemWBBuffDataIn(39) <= exMemBuffDataout(27);--WB
+MemWBBuffDataIn(39) <= exMemBuffDataout(127);--WB
 MemWBBuffDataIn(38 downto 20) <=exMemBuffDataout(124 downto 106); --Dest address and value
 MemWBBuffDataIn(19 downto 1) <= exMemBuffDataout(105 downto 87);--Src address and value
 MemWBBuffDataIn(0)<= exMemBuffDataOut(166);--MUL
