@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 
@@ -11,10 +12,18 @@ namespace Assembler
         static void Main(string[] args)
         {   
             var converter = new AssemblyConverter();
-            
-            string filename = Path.Combine(Environment.CurrentDirectory, "test-cases\\Branch.asm");
-            
-            string outputFilename = Path.Combine(Environment.CurrentDirectory, "output\\Branch.hex");
+
+            string filename, outputFilename;
+
+            if(args.Length == 0)
+            {            
+                filename = Path.Combine(Environment.CurrentDirectory, "test-cases\\Branch.asm");
+                outputFilename = Path.Combine(Environment.CurrentDirectory, "output\\Branch.hex");
+            } else 
+            {
+                filename = Path.Combine(Environment.CurrentDirectory, $"test-cases\\{args[0]}");
+                outputFilename = Path.Combine(Environment.CurrentDirectory, $"output\\{args[1]}");
+            }
 
             int i = 0;
             // // Okay so we need to parse the input file.
@@ -38,15 +47,21 @@ namespace Assembler
                     if(assemblyInstruction.ToUpper().StartsWith(".ORG"))
                     {
                         var lines = assemblyInstruction.Split(' ');
-                        var hex = Convert.ToInt32(lines[1], 16);
-
-                        writer.WriteLine(hex.ToString("X4"));
+                        var integer = Convert.ToInt32(lines[1], 16);
+                        
+                        for(; i < integer; i++)
+                        {
+                            writer.WriteLine($"{i.ToString("X")}: 0000");
+                        }
 
                         continue;
                     }
-
-                    if(int.TryParse(assemblyInstruction, out int bl))
+                    
+                    if(int.TryParse(assemblyInstruction, NumberStyles.HexNumber, null, out int theInteger))
                     {
+                        var hexNumber = theInteger.ToString("X").PadLeft(4, '0');
+                        writer.WriteLine($"{i.ToString("X")}: {hexNumber}");
+                        i++;
                         continue;
                     }
 
@@ -60,13 +75,14 @@ namespace Assembler
                     }
                     // Convert this to our memory code.
                     var machineCode = converter.AssemblyConvert(assemblyInstruction, true);
-                    writer.WriteLine($"{i}: {machineCode.PadLeft(4, '0')}");
+                    writer.WriteLine($"{i.ToString("X")}: {machineCode.PadLeft(4, '0')}");
                     i++;
                 }
 
                 while(i < LASTMEMORYPOSITION)
                 {
-                    writer.WriteLine($"{i++}: {converter.AssemblyConvert("NOP", true).PadLeft(4, '0')}");
+                    writer.WriteLine($"{i.ToString("X")}: {converter.AssemblyConvert("NOP", true).PadLeft(4, '0')}");
+                    i++;
                 }
             }
         }
