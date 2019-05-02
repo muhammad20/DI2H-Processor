@@ -131,9 +131,9 @@ clock, reset, readAddress1, readAddress2, writeAddress,
 regInData, regFileOutData1, regFileOutData2);
 
 
-decodeExecuteBuff: entity work.nbit_register generic map(136) port map(decExBuffDataIn, clock, reset,'1', decExBuffDataOut);
-executeMemoryBuff: entity work.nbit_register generic map(167) port map(exMemBuffDataIn, clock, reset,'1', exMemBuffDataOut);
-MemoryWritebackBuff: entity work.nbit_register generic map(40) port map(MemWBBuffDataIn, clock, reset,'1', MemWBBuffDataOut);
+decodeExecuteBuff: entity work.nbit_register generic map(136) port map(decExBuffDataIn, buffsClk, reset,'1', decExBuffDataOut);
+executeMemoryBuff: entity work.nbit_register generic map(167) port map(exMemBuffDataIn, buffsClk, reset,'1', exMemBuffDataOut);
+MemoryWritebackBuff: entity work.nbit_register generic map(40) port map(MemWBBuffDataIn, buffsClk, reset,'1', MemWBBuffDataOut);
 
 ALU: entity work.ArithmeticLogicUnit port map(decExBuffDataOut(115), clock, reset,
 decExBuffDataOut(132),decExBuffDataOut(133),decExBuffDataOut(130),
