@@ -23,89 +23,93 @@ signal temp1,temp2,temp3: std_logic;
 begin 
 process(EtoM_wb,MtoWB_wb,EtoM_mul,MtoWB_mul,DtoEx_rsrc_addr,EtoM_rdst_addr,EtoM_rdst_val,DtoEx_rdst_val,MtoWB_rdst_addr,MtoWB_rdst_val,EtoM_rsrc_addr,
 EtoM_rsrc_val,DtoEx_rsrc_val,MtoWB_rsrc_addr,MtoWB_rsrc_val)
-begin	
+begin
 
-
-
-if(EtoM_wb = '1')
-then if (DtoEx_rsrc_addr = EtoM_rdst_addr)
-	then fwd_data1 <= EtoM_rdst_val;
-        
-        else if (EtoM_mul ='1')
-                then if(DtoEx_rsrc_addr = EtoM_rsrc_addr)
-	        then fwd_data1 <= EtoM_rsrc_val; 
-                else fwd_data1 <= DtoEx_rsrc_val;
+-- We need to check that the write back at execute to memory is set.
+if (MtoWB_wb = '1') then
+        if(DtoEx_rsrc_addr = MtoWB_rdst_addr) then
+                fwd_data1 <= MtoWB_rdst_val;
+        elsif (MtoWB_mul = '1') then
+                if(DtoEx_rsrc_addr = MtoWB_rsrc_addr) then 
+                        fwd_data1 <= MtoWB_rsrc_val; 
+                else
+                        -- Nothing to forward here.
+                        fwd_data1 <= DtoEx_rsrc_val;
                 end if;
-	 
-        elsif (EtoM_mul /='1' and DtoEx_rsrc_addr /= EtoM_rdst_addr) 
-        then fwd_data1 <= DtoEx_rsrc_val;  
+        else
+                fwd_data1 <= DtoEx_rsrc_val;
         end if;
-        if (temp1 /='1')
-        then fwd_data1 <= DtoEx_rsrc_val;
-          
-        end if;
+else 
+        fwd_data1 <= DtoEx_rsrc_val;
 end if;
 
-if (DtoEx_rdst_addr = EtoM_rdst_addr)
-	then fwd_data1 <= EtoM_rdst_val;
-        temp2 <='0';
-        if (EtoM_mul ='1')
-        then if(DtoEx_rdst_addr = EtoM_rsrc_addr)
-	        then fwd_data1 <= EtoM_rsrc_val; 
-                else fwd_data1 <= DtoEx_rdst_val;
+if (EtoM_wb = '1') then 
+        if (DtoEx_rsrc_addr = EtoM_rdst_addr) then 
+                fwd_data1 <= EtoM_rdst_val;
+        elsif (EtoM_mul ='1') then 
+                if(DtoEx_rsrc_addr = EtoM_rsrc_addr) then 
+                        fwd_data1 <= EtoM_rsrc_val; 
+                else
+                        -- Nothing to forward here.
+                        fwd_data1 <= DtoEx_rsrc_val;
                 end if;
+        else 
+                fwd_data1 <= DtoEx_rsrc_val;
+        end if;
+end if;
+
+-- if (DtoEx_rdst_addr = EtoM_rdst_addr)
+-- 	then fwd_data1 <= EtoM_rdst_val;
+--         temp2 <='0';
+--         if (EtoM_mul ='1')
+--         then if(DtoEx_rdst_addr = EtoM_rsrc_addr)
+-- 	        then fwd_data1 <= EtoM_rsrc_val; 
+--                 else fwd_data1 <= DtoEx_rdst_val;
+--                 end if;
 	 
-        elsif (EtoM_mul /='1' and DtoEx_rdst_addr /= EtoM_rdst_addr ) 
-        then  fwd_data1 <= DtoEx_rdst_val;
-	end if;
-	if (temp2 /='0' and temp1 /='1')
-           then fwd_data1 <= DtoEx_rdst_val;
-       end if;
-end if;
-
-end if;
+--         elsif (EtoM_mul /='1' and DtoEx_rdst_addr /= EtoM_rdst_addr ) 
+--         then  fwd_data1 <= DtoEx_rdst_val;
+-- 	end if;
+-- 	if (temp2 /='0' and temp1 /='1')
+--            then fwd_data1 <= DtoEx_rdst_val;
+--        end if;
+-- end if;
 
 
 
-if (MtoWB_wb = '1')
-then if (DtoEx_rsrc_addr = MtoWB_rdst_addr)
-	then fwd_data2 <= MtoWB_rdst_val;
-        if (MtoWB_mul ='1')
-              then if(DtoEx_rsrc_addr = MtoWB_rsrc_addr)
-	           then fwd_data2 <=MtoWB_rsrc_val; 
-                   else fwd_data2 <= DtoEx_rsrc_val;
-                   end if;
+-- if (MtoWB_wb = '1')
+-- then if (DtoEx_rsrc_addr = MtoWB_rdst_addr)
+-- 	then fwd_data2 <= MtoWB_rdst_val;
+--         if (MtoWB_mul ='1')
+--               then if(DtoEx_rsrc_addr = MtoWB_rsrc_addr)
+-- 	           then fwd_data2 <=MtoWB_rsrc_val; 
+--                    else fwd_data2 <= DtoEx_rsrc_val;
+--                    end if;
 	  
-        elsif (MtoWB_mul /='1' and DtoEx_rsrc_addr /= MtoWB_rdst_addr ) 
-	then fwd_data2 <= DtoEx_rsrc_val;
-        end if;
-	 else
-           fwd_data2 <= DtoEx_rsrc_val;
-        end if;
+--         elsif (MtoWB_mul /='1' and DtoEx_rsrc_addr /= MtoWB_rdst_addr ) 
+-- 	then fwd_data2 <= DtoEx_rsrc_val;
+--         end if;
+-- 	 else
+--            fwd_data2 <= DtoEx_rsrc_val;
+--         end if;
 
- if (DtoEx_rdst_addr = MtoWB_rdst_addr)
-	then fwd_data2 <= MtoWB_rdst_val;
-             if (MtoWB_mul ='1')
-             then if(DtoEx_rdst_addr = MtoWB_rsrc_addr)
-	        then fwd_data2 <= MtoWB_rsrc_val; 
-                else fwd_data2 <= DtoEx_rdst_val;
-                end if;
+--  if (DtoEx_rdst_addr = MtoWB_rdst_addr)
+-- 	then fwd_data2 <= MtoWB_rdst_val;
+--              if (MtoWB_mul ='1')
+--              then if(DtoEx_rdst_addr = MtoWB_rsrc_addr)
+-- 	        then fwd_data2 <= MtoWB_rsrc_val; 
+--                 else fwd_data2 <= DtoEx_rdst_val;
+--                 end if;
 	
-           elsif (MtoWB_mul /='1' and DtoEx_rdst_addr /= MtoWB_rdst_addr ) 
-	   then  fwd_data2 <= DtoEx_rdst_val;
-           end if;
-       else
-           fwd_data2 <= DtoEx_rdst_val;
+--            elsif (MtoWB_mul /='1' and DtoEx_rdst_addr /= MtoWB_rdst_addr ) 
+-- 	   then  fwd_data2 <= DtoEx_rdst_val;
+--            end if;
+--        else
+--            fwd_data2 <= DtoEx_rdst_val;
    
- end if;
+--  end if;
 
-end if;
+-- end if;
 
 end process;
 end architecture;
-
-
-
-
-
-
