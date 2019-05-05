@@ -26,7 +26,7 @@ signal carry,zero,negative: std_logic;
 signal one: std_logic_vector(31 downto 0);
 
 begin
-    process(reset,clock)
+    process(reset,clock, alu_enable, h_type, operation)
         begin
 	
 	if (reset = '1') then
@@ -38,11 +38,11 @@ begin
 		source <="0000000000000000"&src;
 	else 
 		if (alu_enable='1' and rising_edge(clock)) then
-				destination<="0000000000000000"&dest;
+				destination<= X"0000"&dest;
 				carry<='0';
 				zero<='0';
 				negative<='0';
-				source <="0000000000000000"&src;
+				source <= X"0000"&src;
 			if(h_type ='1') then
 				if  (operation =   "001"  ) then
 					--ADDITION
