@@ -68,8 +68,9 @@ begin
 				elsif operation =   "010" then
 					--SUBTRACTION
 					result <= std_logic_vector(to_signed(to_integer(unsigned(destination)-unsigned(source)),32));
-					--MOVE
+					
 				else
+					--MOVE					
 					result<= source;
 				end if;
 				elsif (h_type='0') then
@@ -84,17 +85,26 @@ begin
 end process;
 output<=result;
 one <= X"00000001";
-flags <= zero & negative & carry;
-zero <= '1' when result(15 downto 0) = X"0000" 
-		else '0';
-negative <= '1' when to_integer(unsigned(source))>to_integer(unsigned(destination))
-		else '0';
--- flags<= "101" when result(15 downto 0) = "0000000000000000" and result(16) = '1' else
--- 	"011" when to_integer(unsigned(source))>to_integer(unsigned(destination)) and result(16) = '1' else
--- 	"100" when result = "00000000000000000000000000000000" else
--- 	"010" when to_integer(unsigned(result(15 downto 0)))<0 else
--- 	"001" when (operation = "111" and  destination(to_integer(unsigned(shift_amount))-1) = '1') or 
--- 	(operation = "110" and destination(16 - to_integer(unsigned(shift_amount)))='1') or result(16) = '1' else "000";
+
+
+flags(0)<='1' when (result(15 downto 0) = "0000000000000000" and result(16) = '1') or 
+		(to_integer(unsigned(source))>to_integer(unsigned(destination)) and result(16) = '1') or
+		((operation = "111" and  destination(to_integer(unsigned(shift_amount))-1) = '1') or (setc='1') or 
+	(operation = "110" and destination(16 - to_integer(unsigned(shift_amount)))='1') or result(16) = '1')
+	else '0' when clrc = '1' else '0';
+
+flags(1) <= '1' when (to_integer(unsigned(source))>to_integer(unsigned(destination)) and result(16) = '1') or
+	(to_integer(unsigned(result(15 downto 0)))<0 ) else '0';
+
+flags(2) <= '1' when (result(15 downto 0) = "0000000000000000" and result(16) = '1') or (result = "00000000000000000000000000000000" )else '0';
+	
+
+ --flags<= "101" when result(15 downto 0) = "0000000000000000" and result(16) = '1' else
+ 	--"011" when to_integer(unsigned(source))>to_integer(unsigned(destination)) and result(16) = '1' else
+ 	--"100" when result = "00000000000000000000000000000000" else
+ 	--"010" when to_integer(unsigned(result(15 downto 0)))<0 else
+ 	--"001" when (operation = "111" and  destination(to_integer(unsigned(shift_amount))-1) = '1') or (setc='1') or 
+	--(operation = "110" and destination(16 - to_integer(unsigned(shift_amount)))='1') or result(16) = '1' else "000";
 end Architecture;
      
 -- Z N C 
