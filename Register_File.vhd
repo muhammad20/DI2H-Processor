@@ -18,27 +18,29 @@ signal endec_read1,endec_read2,endec_write: std_logic;
 signal output_read1,output_read2,output_write1: std_logic_vector(7 downto 0);
 signal out1,out2,out3,out4,out5,out6,out7,out8: std_logic_vector(15 downto 0);
 
+Signal registerOutput1, registerOutput2 : std_logic_vector(15 downto 0);
+
 begin
 
 --read data from read address 1
-t0: entity work.tristate generic map(16) port map (out1,dataout1,output_read1(0));
-t1: entity work.tristate generic map(16) port map (out2,dataout1,output_read1(1));
-t2: entity work.tristate generic map(16) port map (out3,dataout1,output_read1(2));
-t3: entity work.tristate generic map(16) port map (out4,dataout1,output_read1(3));
-t4: entity work.tristate generic map(16) port map (out5,dataout1,output_read1(4));
-t5: entity work.tristate generic map(16) port map (out6,dataout1,output_read1(5));
-t6: entity work.tristate generic map(16) port map (out7,dataout1,output_read1(6));
-t7: entity work.tristate generic map(16) port map (out8,dataout1,output_read1(7));
+t0: entity work.tristate generic map(16) port map (out1,registerOutput1,output_read1(0));
+t1: entity work.tristate generic map(16) port map (out2,registerOutput1,output_read1(1));
+t2: entity work.tristate generic map(16) port map (out3,registerOutput1,output_read1(2));
+t3: entity work.tristate generic map(16) port map (out4,registerOutput1,output_read1(3));
+t4: entity work.tristate generic map(16) port map (out5,registerOutput1,output_read1(4));
+t5: entity work.tristate generic map(16) port map (out6,registerOutput1,output_read1(5));
+t6: entity work.tristate generic map(16) port map (out7,registerOutput1,output_read1(6));
+t7: entity work.tristate generic map(16) port map (out8,registerOutput1,output_read1(7));
 
 --read data from read address 2
-t8: entity work.tristate generic map(16) port map (out1,dataout2,output_read2(0));
-t9: entity work.tristate generic map(16) port map (out2,dataout2,output_read2(1));
-tA: entity work.tristate generic map(16) port map (out3,dataout2,output_read2(2));
-tB: entity work.tristate generic map(16) port map (out4,dataout2,output_read2(3));
-tC: entity work.tristate generic map(16) port map (out5,dataout2,output_read2(4));
-tD: entity work.tristate generic map(16) port map (out6,dataout2,output_read2(5));
-tE: entity work.tristate generic map(16) port map (out7,dataout2,output_read2(6));
-tF: entity work.tristate generic map(16) port map (out8,dataout2,output_read2(7));
+t8: entity work.tristate generic map(16) port map (out1,registerOutput2,output_read2(0));
+t9: entity work.tristate generic map(16) port map (out2,registerOutput2,output_read2(1));
+tA: entity work.tristate generic map(16) port map (out3,registerOutput2,output_read2(2));
+tB: entity work.tristate generic map(16) port map (out4,registerOutput2,output_read2(3));
+tC: entity work.tristate generic map(16) port map (out5,registerOutput2,output_read2(4));
+tD: entity work.tristate generic map(16) port map (out6,registerOutput2,output_read2(5));
+tE: entity work.tristate generic map(16) port map (out7,registerOutput2,output_read2(6));
+tF: entity work.tristate generic map(16) port map (out8,registerOutput2,output_read2(7));
 
 --8 16-bit registers
 r0: entity work.nbit_register generic map(16) port map (datain,clk,rst,output_write1(0),out1);
@@ -57,6 +59,16 @@ d1: entity work.decoder3x8 port map(Address_read2,endec_read2,output_read2);
 --write decoder
 d2: entity work.decoder3x8 port map(Address_write,endec_write,output_write1);
 
+-- dataout1 <= datain when Read_Sig = '1' and Write_Sig = '1' and Address_read1 = Address_write and endec_read1 = '1'
+-- 			else registerOutput1;
+
+dataout1 <= registerOutput1;
+
+--dataout2 <= datain when Read_Sig = '1' and Write_Sig = '1' and Address_read2 = Address_write and endec_read2 = '1'
+--			else registerOutput2;
+
+dataout2 <= registerOutput2;
+
 process(clk, Write_Sig, Read_Sig)
 begin
 if(rst='1') then
@@ -64,12 +76,12 @@ if(rst='1') then
 	endec_read1 <= '0';
 	endec_read2 <= '0';
 	else
-    if(rising_edge(clk) and Write_Sig='1') 
-    then endec_write<='1';
-    elsif (falling_edge(clk) and Read_Sig='1') 
-        then endec_read2<='1';
+	if(rising_edge(clk) and Write_Sig='1') then 
+		endec_write<='1';
+	elsif (rising_edge(clk) and Read_Sig='1') then 
+		endec_read2<='1';
 		endec_read1 <='1';
-end if;
+	end if;
 end if;
 end process;
 
