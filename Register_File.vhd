@@ -62,27 +62,44 @@ d2: entity work.decoder3x8 port map(Address_write,endec_write,output_write1);
 -- dataout1 <= datain when Read_Sig = '1' and Write_Sig = '1' and Address_read1 = Address_write and endec_read1 = '1'
 -- 			else registerOutput1;
 
-dataout1 <= registerOutput1;
-
 --dataout2 <= datain when Read_Sig = '1' and Write_Sig = '1' and Address_read2 = Address_write and endec_read2 = '1'
 --			else registerOutput2;
 
-dataout2 <= registerOutput2;
+endec_read1 <= Read_Sig;
+endec_read2 <= Read_Sig;
+endec_write <= Write_Sig;
 
-process(clk, Write_Sig, Read_Sig)
+process(clk)
 begin
-if(rst='1') then
-	endec_write <= '0';
-	endec_read1 <= '0';
-	endec_read2 <= '0';
-	else
-	if(rising_edge(clk) and Write_Sig='1') then 
-		endec_write<='1';
-	elsif (rising_edge(clk) and Read_Sig='1') then 
-		endec_read2<='1';
-		endec_read1 <='1';
+-- if(rst='1') then
+-- 	endec_write <= '0';
+-- 	endec_read1 <= '0';
+-- 	endec_read2 <= '0';
+-- else
+-- 	if(rising_edge(clk)) then 
+-- 		if(Write_Sig = '1') then
+-- 			endec_write<='1';
+-- 		else
+-- 			endec_write <= '0';
+-- 		end if;
+-- 		if(Read_Sig = '1') then
+-- 			endec_read1 <= '0';
+-- 			endec_read2 <= '0';
+-- 		end if;
+-- 	end if;
+-- end if;
+	if(rising_edge(clk)) then
+		if(Write_Sig = '1' and Read_Sig = '1' and Address_read1 = Address_write) then
+			dataout1 <= datain;
+		else
+			dataout1 <= registerOutput1;
+		end if;
+		if(Write_Sig = '1' and Read_Sig = '1' and Address_read2 = Address_write) then
+			dataout2 <= datain;
+		else	
+			dataout2 <= registerOutput2;
+		end if;
 	end if;
-end if;
 end process;
 
 end architecture;
