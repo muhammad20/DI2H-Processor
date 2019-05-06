@@ -33,7 +33,7 @@ signal regFileOutData1, regFileOutData2: std_logic_vector(15 downto 0);
 signal  bufferedInstruction: std_logic_vector(31 downto 0);
 signal decExBuffDataIn, decExBuffDataOut: std_logic_vector(135 downto 0);
 signal exMemBuffDataIn, exMemBuffDataOut: std_logic_vector(166 downto 0);
-signal MemWBBuffDataIn, MemWBBuffDataOut: std_logic_vector(71 downto 0);
+signal MemWBBuffDataIn, MemWBBuffDataOut: std_logic_vector(91 downto 0);
 
 --------------- buffers reset signals and enables
 signal fetch_dec_buffRst, fetch_dec_buffEn, dec_ex_buffRst, dec_ex_buffEn, buffsClk: std_logic;
@@ -57,6 +57,8 @@ dec_ex_buffEn <= '1';
 jmp_result <= '0';
 buffsClk <= not clock;
 
+dec_ex_effective_address(19 downto 13)<= bufferedInstruction(7 downto 1);
+dec_ex_effective_address(12 downto 0) <= bufferedInstruction(31 downto 19); 
 readAddress1 <= bufferedInstruction(10 downto 8); --destination address
 readAddress2 <= bufferedInstruction(7 downto 5); --- source address
 writeAddress <= bufferedInstruction(10 downto 8); ---destination is the first oeprand
@@ -86,6 +88,7 @@ exMemBuffDataIn(13 downto 0)<= (others=>'0');
 --exMemBuffDataOut(118) = write back enable
 
 ---- Memory to write back buffer
+MemWBBuffDataIn(91 downto 72) <= exMemBuffDataIn(34 downto 15); --Effective address/Immvalue
 MemWBBuffDataIn(71 downto 40) <= exMembuffDataOut(165 downto 134); -- ALU result
 MemWBBuffDataIn(39) <= exMemBuffDataout(127);--WB
 MemWBBuffDataIn(38 downto 20) <=exMemBuffDataout(105 downto 87); --Dest address and value
@@ -202,7 +205,7 @@ mem_write,
 mem_read);
 
 ---------------------------------------------------- Write back stage --------------------------------------------------------------
-MemoryWritebackBuff: entity work.nbit_register generic map(72) port map(MemWBBuffDataIn, buffsClk, reset,'1', MemWBBuffDataOut);
+MemoryWritebackBuff: entity work.nbit_register generic map(92) port map(MemWBBuffDataIn, buffsClk, reset,'1', MemWBBuffDataOut);
 regInData <= MemWBBuffDataOut(55 downto 40); --------------------- write data to reg file
 
 end Architecture;
