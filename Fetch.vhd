@@ -69,7 +69,7 @@ end process;
 nopInstruction <= "00000000000000001101100000000000";
 --program_counter <= programCount when fetch_enable='1' and pc_change_enable = '1';
 instruction_out <= nopInstruction when fetch_enable='0' else 
-		 instructionIn32 & instructionIn16 when fetch_enable = '1' and instructionIn32(0) = '1'  else
+		 instructionIn16 & instructionIn32 when fetch_enable = '1' and instructionIn32(0) = '1'  else
 		 "0000000000000000"&instructionIn32 when fetch_enable = '1' and instructionIn32(0) = '0'  ;
 pcEnable<=(fetch_enable and pc_change_enable);
 

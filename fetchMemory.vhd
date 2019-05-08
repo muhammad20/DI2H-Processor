@@ -47,6 +47,7 @@ signal MemWB_wb, DecEx_setc, DecEx_clrc, DecEx_inc, DecEx_dec, DecEx_not, DecEx_
 signal MemWB_write_addr, htype_op: std_logic_vector(2 downto 0);
 signal DecEx_src_val, DecEx_dst_val: std_logic_vector(15 downto 0);
 signal DecEx_sh_amount: std_logic_vector(3 downto 0);
+signal bufferedInstructionOrg: std_logic_vector(31 downto 0);
 
 begin
 
@@ -88,7 +89,7 @@ exMemBuffDataIn(13 downto 0)<= (others=>'0');
 --exMemBuffDataOut(118) = write back enable
 
 ---- Memory to write back buffer
-MemWBBuffDataIn(91 downto 72) <= exMemBuffDataIn(34 downto 15); --Effective address/Immvalue
+MemWBBuffDataIn(91 downto 72) <= exMemBuffDataOut(34 downto 15); --Effective address/Immvalue
 MemWBBuffDataIn(71 downto 40) <= exMembuffDataOut(165 downto 134); -- ALU result
 MemWBBuffDataIn(39) <= exMemBuffDataout(127);--WB
 MemWBBuffDataIn(38 downto 20) <=exMemBuffDataout(105 downto 87); --Dest address and value
@@ -118,6 +119,7 @@ fromFetch,
 fetchedInstruction); 
 --JMP_RESULT should come from the buffer 
 
+bufferedInstructionOrg(31 downto 16) <= fetchedInstruction(15 downto 0);
 fetchDecodeBuff: entity work.nbit_register generic map(32) port map(fetchedInstruction, buffsClk, reset, '1', bufferedInstruction);
 
 ------------------------------------------------------------------- decode stage ---------------------------------------------------------

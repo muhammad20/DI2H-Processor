@@ -89,17 +89,9 @@ begin
 --end process;
 
 process(clock) begin
---	if (reset = '1') then
---		result <= "00000000000000000000000000000000";
---		carry<='0';
---		zero<='0';
---		negative<='0';
---		destination<="0000000000000000"&dest;
---		source <="0000000000000000"&src;
 	if(rising_edge(clock)) then
 		output <= oup;
  	end if;
---end if;
  end process;
 
 zero_val <= X"00000000";
@@ -127,19 +119,23 @@ mOp_x: entity work.mux8x1 generic map(32) port map(inc_val, not_val, dec_val, ze
 selOp: entity work.mux2x1 generic map(32) port map(x_result, h_result, h_type, result);
 sense_output: entity work.mux2x1 generic map(32) port map(zero_val, result, alu_enable, oup);
 
+zero <= '1' when oup(15 downto 0) = x"0000" else '0';
+carry <= '1' when oup(16) = '1' else '0';
+negative <= '1' when to_integer(signed(oup)) < to_integer(signed(zero_val)) else '0';
 
+flags <= zero & negative & carry;
 
-flags(0)<='1' when (result(15 downto 0) = "0000000000000000" and result(16) = '1') or 
-		(to_integer(unsigned(source))>to_integer(unsigned(destination)) and result(16) = '1') or
-		((operation = "111" and  destination(to_integer(unsigned(shift_amount))-1) = '1') or (setc='1') or 
-	(operation = "110" and destination(16 - to_integer(unsigned(shift_amount)))='1') or result(16) = '1')
-	else '0' when clrc = '1' else '0';
-
-flags(1) <= '1' when (to_integer(unsigned(source))>to_integer(unsigned(destination)) and result(16) = '1') or
-	(to_integer(unsigned(result(15 downto 0)))<0 ) else '0';
-
-flags(2) <= '1' when (result(15 downto 0) = "0000000000000000" and result(16) = '1') or (result = "00000000000000000000000000000000" )else '0';
-	
+--flags(0)<='1' when (result(15 downto 0) = X"0000" and result(16) = '1') or 
+--		(to_integer(unsigned(source))>to_integer(unsigned(destination)) and result(16) = '1') or
+--		((operation = "111" and  destination(to_integer(unsigned(shift_amount))-1) = '1') or (setc='1') or 
+--	(operation = "110" and destination(16 - to_integer(unsigned(shift_amount)))='1') or result(16) = '1')
+--	else '0' when clrc = '1';
+--
+--flags(1) <= '1' when (to_integer(unsigned(source))>to_integer(unsigned(destination)) and result(16) = '1') or
+--	(to_integer(unsigned(result(15 downto 0)))<0 ) else '0';
+--
+--flags(2) <= '1' when (result(15 downto 0) = "0000000000000000" and result(16) = '1') or (result = "00000000000000000000000000000000" )else '0';
+--	
 
  --flags<= "101" when result(15 downto 0) = "0000000000000000" and result(16) = '1' else
  	--"011" when to_integer(unsigned(source))>to_integer(unsigned(destination)) and result(16) = '1' else
