@@ -75,7 +75,7 @@ decExBuffDataIn(37 downto 19) <= readAddress1 & regFileOutData1; --- DST address
 decExBuffDataIn(18 downto 0) <= readAddress2 & regFileOutData2; --- SRC address and value
 
 ---- Execute to Memory Data Buffer
-exMemBuffDataIn(166)<= decExBuffDataOut(129);
+exMemBuffDataIn(166)<= decExBuffDataOut(129);			----- decode to execute mul signal
 exMemBuffDataIn(165 downto 134)<= alu_result;
 exMemBuffDataIn(133 downto 131) <= flags_result;
 exMemBuffDataIn(130 downto 125) <= decExBuffDataOut(119 downto 116) & decExBuffDataOut(110) & jmp_result; --Memrd, memwr, memtoreg, wb_en, ret_rti, jmp_enable
@@ -231,6 +231,28 @@ hdu: entity work.Hazard_detection_unit port map(
 	stall_ret													----stall ret signal
 	stall_rti														----stall rti signal								
 	stall_int								                    ----stall int signal
+);
+
+----------------------------------------------------- Forwarding Unit -----------------------------------------------------------------------------
+fu: entity work.Fwd_unit port map (
+exMemBuffDataOut(121 downto 106),					----EtoM_src_val
+exMemBuffDataOut(102 downto 87),					----EtoM_dst_val
+exMemBuffDataOut(124 downto 122),					----EtoM_src_addr
+exMemBuffDataOut(105 downto 103),					----EtoM_dst_addr
+MemWBBuffDataOut(35 downto 20),				----MtoWB_src_val
+MemWBBuffDataOut(16 downto 1),				----MtoWb_dst_val
+MemWBBuffDataOut(38 downto 36),				----MtoWb_src_addr
+MemWBBuffDataOut(19 downto 17),				----MtoWb_src_addr
+decExBuffDataOut(15 downto 0),					----DtoEx_src_val
+decExBuffDataOut(34 downto 19),					----DtoEx_dst_val
+decExBuffDataOut(18 downto 16),					----DtoEx_src_addr
+decExBuffDataOut(37 downto 35),					----DtoEx_dst_addr
+exMemBuffDataOut(127),					----EtoM_wb
+MemWBBuffDataOut(39),				----MtoWB_wb
+MemWBBuffDataOut(0),				----MtoWB_mul
+exMemBuffDataOut(129),					----EtoM_mul
+fwd_data1,									----fwd_data1
+fwd_data2									----fwd_data2
 );
 
 
