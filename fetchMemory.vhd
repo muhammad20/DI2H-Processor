@@ -54,6 +54,7 @@ signal MemWB_write_addr, htype_op: std_logic_vector(2 downto 0);
 signal DecEx_src_val, DecEx_dst_val: std_logic_vector(15 downto 0);
 signal DecEx_sh_amount: std_logic_vector(3 downto 0);
 signal bufferedInstructionOrg: std_logic_vector(31 downto 0);
+signal wb_selector: std_logic_vector(2 downto 0);
 
 begin
 
@@ -98,7 +99,7 @@ exMemBuffDataIn(13 downto 0)<= (others=>'0');
 --exMemBuffDataOut(118) = write back enable
 
 ---- Memory to write back buffer
-MemWBBuffDataIn(91 downto 72) <= exMemBuffDataOut(34 downto 15); --Effective address/Immvalue
+MemWBBuffDataIn(87 downto 72) <= exMemBuffDataOut(34 downto 19); --Effective address/Immvalue
 MemWBBuffDataIn(71 downto 40) <= exMembuffDataOut(165 downto 134); -- ALU result
 MemWBBuffDataIn(39) <= exMemBuffDataout(127);--WB
 MemWBBuffDataIn(38 downto 20) <=exMemBuffDataout(105 downto 87); --Dest address and value
@@ -166,7 +167,7 @@ MemWB_write_addr, 									----------write address
 regInData,													----------register input data
 regFileOutData1, regFileOutData2);			----------register output data
 
-decExBuffDataIn(151 downto 135) <= fetchDecBuffDataOut(47 downto 32);
+decExBuffDataIn(151 downto 136) <= fetchDecBuffDataOut(47 downto 32);
 decodeExecuteBuff: entity work.nbit_register generic map(152) port map(decExBuffDataIn, buffsClk, reset,'1', decExBuffDataOut);
 
 --------------------------------------------------------- Execute Stage ------------------------------------------------------------------
@@ -221,8 +222,8 @@ mem_read);
 ---------------------------------------------------- Write back stage --------------------------------------------------------------
 MemWBBuffDataIn(107 downto 92) <= exMemBuffDataOut(182 downto 167);
 MemoryWritebackBuff: entity work.nbit_register generic map(108) port map(MemWBBuffDataIn, buffsClk, reset,'1', MemWBBuffDataOut);
-regInData <= MemWBBuffDataOut(55 downto 40); --------------------- write data to reg file
-
+MemWBBuffDataOut(55 downto 40); --------------------- LS16B of ALU result
+inDataMux: entity work.mux4x1 generic map(16) port map(MemWBBuffDataOut(55 downto 40), MemWBBuffDataOut(87 downto 72), fromMemory(31 downto 16), fromMemory(31 downto 16)), wb_selector, regInData);
 
 --------------------------------------------------- Hazard Detection Unit ----------------------------------------------------------
 hdu: entity work.Hazard_detection_unit port map(
