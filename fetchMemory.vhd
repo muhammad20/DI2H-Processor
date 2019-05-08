@@ -96,11 +96,14 @@ exMemBuffDataIn(86 downto 67) <= decExBuffDataOut(89 downto 70); --PC
 exMemBuffDataIn(66 downto 35) <= decExbuffDataOut(69 downto 38); --SP
 exMemBuffDataIn(34 downto 15) <= decExBuffDataOut(109 downto 90); -- Effective Address
 exMemBuffDataIn(14) <= decExBuffDataOut(129);
-exMemBuffDataIn(13 downto 0)<= (others=>'0');
+exMemBuffDataIn(13 downto 9)<= decExBuffDataOut(124 downto 120); --opcode
+exMemBuffDataIn(8 downto 0) <= (others => '0');
 
---exMemBuffDataOut(118) = write back enable
+--exMemBuffDataOut(116) = write back enable
 
 ---- Memory to write back buffer
+MemWBBuffDataIn(112 downto 108) <= exMemBuffDataOut(13 downto 9); -----opcode
+MemWBBuffDataIn(107 downto 92) <= exMemBuffDataOut(182 downto 167);
 MemWBBuffDataIn(87 downto 72) <= exMemBuffDataOut(34 downto 19); --Effective address/Immvalue
 MemWBBuffDataIn(71 downto 40) <= exMembuffDataOut(165 downto 134); -- ALU result
 MemWBBuffDataIn(39) <= exMemBuffDataout(127);--WB
@@ -222,10 +225,19 @@ mem_write,
 mem_read);
 
 ---------------------------------------------------- Write back stage --------------------------------------------------------------
-MemWBBuffDataIn(107 downto 92) <= exMemBuffDataOut(182 downto 167);
 MemoryWritebackBuff: entity work.nbit_register generic map(108) port map(MemWBBuffDataIn, buffsClk, reset,'1', MemWBBuffDataOut);
-MemWBBuffDataOut(55 downto 40); --------------------- LS16B of ALU result
-inDataMux: entity work.mux4x1 generic map(16) port map(MemWBBuffDataOut(55 downto 40), MemWBBuffDataOut(87 downto 72), fromMemory(31 downto 16), fromMemory(31 downto 16)), wb_selector, regInData);
+
+wb_selector <= ;
+regInData <= MemWBBuffDataOut(55 downto 40) when MemWBBuffDataOut(112) = '1'
+						else MemWBBuffDataOut(87 downto 72) when MemWBBuffDataOut(112 downto 108) = "00011"
+						else MemWBBuffDatOut();
+inDataMux: entity work.mux4x1 
+generic map(16) 
+port map(MemWBBuffDataOut(55 downto 40),	----- LS16B of ALU result
+MemWBBuffDataOut(87 downto 72),				----- Imm value
+fromMemory(31 downto 16),					----- from memory of effective address or pop instruction
+fromMemory(31 downto 16),
+wb_selector, regInData);
 
 --------------------------------------------------- Hazard Detection Unit ----------------------------------------------------------
 hdu: entity work.Hazard_detection_unit port map(
