@@ -228,19 +228,19 @@ mem_read);
 ---------------------------------------------------- Write back stage --------------------------------------------------------------
 MemoryWritebackBuff: entity work.nbit_register generic map(108) port map(MemWBBuffDataIn, buffsClk, reset,'1', MemWBBuffDataOut);
 
-wb_selector <= ;
+
 regInData <= MemWBBuffDataOut(55 downto 40) when MemWBBuffDataOut(112) = '1'
 						else MemWBBuffDataOut(87 downto 72) when MemWBBuffDataOut(112 downto 108) = "00011"
 						else MemWBBuffDataOut(128 downto 113) when (MemWBBuffDataOut(112 downto 108) = "00001" or MemWBBuffDataOut(112 downto 108) = "00111")
 						else MemWBBuffDataOut(107 downto 92) when MemWBBUffDataOut(112 downto 108) = "00101"
 						;
 inDataMux: entity work.mux4x1 
-generic map(16) 
-port map(MemWBBuffDataOut(55 downto 40),	----- LS16B of ALU result
-MemWBBuffDataOut(87 downto 72),				----- Imm value
-fromMemory(31 downto 16),					----- from memory of effective address or pop instruction
-fromMemory(31 downto 16),
-wb_selector, regInData);
+-- generic map(16) 
+-- port map(MemWBBuffDataOut(55 downto 40),	----- LS16B of ALU result
+-- MemWBBuffDataOut(87 downto 72),				----- Imm value
+-- fromMemory(31 downto 16),					----- from memory of effective address or pop instruction
+-- fromMemory(31 downto 16),
+-- wb_selector, regInData);
 
 --------------------------------------------------- Hazard Detection Unit ----------------------------------------------------------
 hdu: entity work.Hazard_detection_unit port map(
