@@ -23,7 +23,7 @@ signal regInData: std_logic_vector(15 downto 0);
 signal pc_change_enable, stall_mul,stall_rti,stall_ret,stall_INT: std_logic;
 
 
-signal push_sig, pop_sig, ret_rti, jmp_result: std_logic;
+signal push_sig, pop_sig, ret_rti, jmp_enable: std_logic;
 signal jmp_type: std_logic_vector(1 downto 0);
 signal dec_ex_effective_address, dec_ex_pc: std_logic_vector(19 downto 0);
 
@@ -56,7 +56,7 @@ fetch_dec_buffRst <= reset;
 fetch_dec_buffEn <= '1';
 dec_ex_buffRst <= reset;
 dec_ex_buffEn <= '1';
-jmp_result <= '0';
+jmp_enable <= '0';
 buffsClk <= not clock;
 
 dec_ex_effective_address(19 downto 13)<= bufferedInstruction(7 downto 1);
@@ -78,7 +78,7 @@ decExBuffDataIn(18 downto 0) <= readAddress2 & regFileOutData2; --- SRC address 
 exMemBuffDataIn(166)<= decExBuffDataOut(129);			----- decode to execute mul signal
 exMemBuffDataIn(165 downto 134)<= alu_result;
 exMemBuffDataIn(133 downto 131) <= flags_result;
-exMemBuffDataIn(130 downto 125) <= decExBuffDataOut(119 downto 116) & decExBuffDataOut(110) & jmp_result; --Memrd, memwr, memtoreg, wb_en, ret_rti, jmp_enable
+exMemBuffDataIn(130 downto 125) <= decExBuffDataOut(119 downto 116) & decExBuffDataOut(110) & jmp_enable; --Memrd, memwr, memtoreg, wb_en, ret_rti, jmp_enable
 exMemBuffDataIn(124 downto 106) <= decExBuffDataOut(18 downto 0) ; -- SRC address and value
 exMemBuffDataIn(105 downto 87) <= decExBuffDataOut(37 downto 19); -- DST address and value
 exMemBuffDataIn(86 downto 67) <= decExBuffDataOut(89 downto 70); --PC
@@ -109,8 +109,8 @@ clock,
 fetch_enable, 
 reset,
 pc_change_enable,									-----------pc change enable		
-jmp_enable, 											-----------jmp enable
-INT,
+INT, 											-----------jmp enable
+jmp_enable,
 mem_zero,
 mem_one,
 fromMemory(31 downto 16),
@@ -218,7 +218,7 @@ hdu: entity work.Hazard_detection_unit port map(
 	exMemBuffDataOut(130),						----Ex_M_memread
 	decExBuffDataOut(119),							----dec_ex_memread
 	decExBuffDataOut(116),							----dec_ex_writeback
-	deExBuffDataOut(37 downto 35),			----dec_ex_DST
+	decExBuffDataOut(37 downto 35),			----dec_ex_DST
 	exMemBuffDataOut(124 downto 122),	----ex_mem_SRC
 	exMemBuffDataOut(105 downto 103),	----ex_mem_DST
 	decExBuffDataOut(129),							----multiply signal
@@ -227,9 +227,9 @@ hdu: entity work.Hazard_detection_unit port map(
 	exMemBuffDataOut(110),						----ex_mem_rti
 	fetch_enable,											----fetch_enable
 	pc_change_enable,									----pc_change_enable
-	stall_mul													----stall mul signal
-	stall_ret													----stall ret signal
-	stall_rti														----stall rti signal								
+	stall_mul,													----stall mul signal
+	stall_ret,													----stall ret signal
+	stall_rti,														----stall rti signal								
 	stall_int								                    ----stall int signal
 );
 
