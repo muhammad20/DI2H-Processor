@@ -41,7 +41,7 @@ Signal inFetchDecodeBuffer : std_logic_vector(15 downto 0);
 signal fetchDecBuffDataIn, fetchDecBuffDataOut: std_logic_vector(47 downto 0);
 signal decExBuffDataIn, decExBuffDataOut: std_logic_vector(151 downto 0);
 signal exMemBuffDataIn, exMemBuffDataOut: std_logic_vector(182 downto 0);
-signal MemWBBuffDataIn, MemWBBuffDataOut: std_logic_vector(107 downto 0);
+signal MemWBBuffDataIn, MemWBBuffDataOut: std_logic_vector(128 downto 0);
 
 --------------- buffers reset signals and enables
 signal fetch_dec_buffRst, fetch_dec_buffEn, dec_ex_buffRst, dec_ex_buffEn, buffsClk: std_logic;
@@ -102,6 +102,7 @@ exMemBuffDataIn(8 downto 0) <= (others => '0');
 --exMemBuffDataOut(116) = write back enable
 
 ---- Memory to write back buffer
+MemWBBuffDataIn(128 downto 113) <= fromMemory(31 downto 16);
 MemWBBuffDataIn(112 downto 108) <= exMemBuffDataOut(13 downto 9); -----opcode
 MemWBBuffDataIn(107 downto 92) <= exMemBuffDataOut(182 downto 167);
 MemWBBuffDataIn(87 downto 72) <= exMemBuffDataOut(34 downto 19); --Effective address/Immvalue
@@ -230,7 +231,9 @@ MemoryWritebackBuff: entity work.nbit_register generic map(108) port map(MemWBBu
 wb_selector <= ;
 regInData <= MemWBBuffDataOut(55 downto 40) when MemWBBuffDataOut(112) = '1'
 						else MemWBBuffDataOut(87 downto 72) when MemWBBuffDataOut(112 downto 108) = "00011"
-						else MemWBBuffDatOut();
+						else MemWBBuffDataOut(128 downto 113) when (MemWBBuffDataOut(112 downto 108) = "00001" or MemWBBuffDataOut(112 downto 108) = "00111")
+						else MemWBBuffDataOut(107 downto 92) when MemWBBUffDataOut(112 downto 108) = "00101"
+						;
 inDataMux: entity work.mux4x1 
 generic map(16) 
 port map(MemWBBuffDataOut(55 downto 40),	----- LS16B of ALU result
