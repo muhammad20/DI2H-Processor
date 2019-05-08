@@ -240,7 +240,7 @@ regInData <= MemWBBuffDataOut(55 downto 40) when MemWBBuffDataOut(112) = '1'
 						else MemWBBuffDataOut(128 downto 113) when (MemWBBuffDataOut(112 downto 108) = "00001" or MemWBBuffDataOut(112 downto 108) = "00111")
 						else MemWBBuffDataOut(107 downto 92) when MemWBBUffDataOut(112 downto 108) = "00101"
 						;
-inDataMux: entity work.mux4x1 
+-- inDataMux: entity work.mux4x1 
 -- generic map(16) 
 -- port map(MemWBBuffDataOut(55 downto 40),	----- LS16B of ALU result
 -- MemWBBuffDataOut(87 downto 72),				----- Imm value
