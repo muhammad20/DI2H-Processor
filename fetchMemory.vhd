@@ -20,7 +20,7 @@ signal fromFetch: std_logic_vector(31 downto 0);
 signal fetchedInstruction: std_logic_vector(31 downto 0);
 signal readAddress1, readAddress2, writeAddress: std_logic_vector(2 downto 0);
 signal regInData: std_logic_vector(15 downto 0);
-signal pc_change_enable, stall_mul,stall_rti,stall_ret,stall_INT,stall_ld: std_logic;
+signal pc_change_enable, stall_mul,stall_rti,stall_ret,stall_INT,stall_ld,out_type: std_logic;
 
 
 signal push_sig, pop_sig, ret_rti, jmp_enable, fetch_enable: std_logic;
@@ -145,8 +145,8 @@ decExBuffDataIn(134),								----------not
 decExBuffDataIn(130),								----------inc
 decExBuffDataIn(131),								----------dec
 decExBuffDataIn(129),								----------multiply signal
-decExBuffDataIn(135));								----------h_type
-
+decExBuffDataIn(135),								----------h_type
+out_type);
 ---------------------------------------------------------------- register file
 MemWB_wb <= MemWBBuffDataOut(39);
 MemWB_write_addr <= MemWBBuffDataOut(38 downto 36);
