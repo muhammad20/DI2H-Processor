@@ -94,3 +94,19 @@ run
 run
 run
 run
+
+
+//
+
+force -freeze sim:/fetchmemoryunit/clock 1 0, 0 {50 ps} -r 100
+force -freeze sim:/fetchmemoryunit/reset 1 0
+force -freeze sim:/fetchmemoryunit/mem_read 1 0
+force -freeze sim:/fetchmemoryunit/INT 0 0
+force -freeze sim:/fetchmemoryunit/inport 16'h120A 0
+mem load -filltype value -filldata 2900 -fillradix hexadecimal /fetchmemoryunit/memory/r0/s_ram(0)
+mem load -filltype value -filldata D800 -fillradix hexadecimal /fetchmemoryunit/memory/r0/s_ram(1)
+mem load -filltype value -filldata D800 -fillradix hexadecimal /fetchmemoryunit/memory/r0/s_ram(2)
+mem load -filltype value -filldata 8A20 -fillradix hexadecimal /fetchmemoryunit/memory/r0/s_ram(3)
+run
+force -freeze sim:/fetchmemoryunit/reset 0 0
+run

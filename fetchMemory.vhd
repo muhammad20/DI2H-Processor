@@ -55,8 +55,6 @@ signal MemWB_wb, DecEx_setc, DecEx_clrc, DecEx_inc, DecEx_dec, DecEx_not, DecEx_
 signal MemWB_write_addr, htype_op: std_logic_vector(2 downto 0);
 signal DecEx_src_val, DecEx_dst_val: std_logic_vector(15 downto 0);
 signal DecEx_sh_amount: std_logic_vector(3 downto 0);
-signal bufferedInstructionOrg: std_logic_vector(31 downto 0);
-signal wb_selector: std_logic_vector(2 downto 0);
 
 begin
 
@@ -86,7 +84,7 @@ decExBuffDataIn(37 downto 19) <= readAddress1 & regFileOutData1; --- DST address
 decExBuffDataIn(18 downto 0) <= readAddress2 & regFileOutData2; --- SRC address and value
 
 -- Set the output port.
-outport regFileOutData1 <= when out_type = '1'
+outport  <= regFileOutData1 when out_type = '1'
 		else (others => 'Z');
 
 ---- Execute to Memory Data Buffer
@@ -128,7 +126,7 @@ clock,
 fetch_enable, 
 reset,
 pc_change_enable,									-----------pc change enable		
-INT, 											-----------jmp enable
+INT, 											-----------INT
 jmp_enable,
 mem_zero,
 mem_one,
@@ -139,7 +137,6 @@ fromFetch,
 fetchedInstruction); 
 --JMP_RESULT should come from the buffer 
 
-bufferedInstructionOrg(31 downto 16) <= fetchedInstruction(15 downto 0);
 fetchDecBuffDataIn <= inport&fetchedInstruction;
 fetchDecodeBuff: entity work.nbit_register generic map(48) port map(fetchDecBuffDataIn, buffsClk, reset, '1', fetchDecBuffDataOut);
 bufferedInstruction <= fetchDecBuffDataOut(31 downto 0);
@@ -232,23 +229,16 @@ mem_write,
 mem_read);
 
 ---------------------------------------------------- Write back stage --------------------------------------------------------------
-MemoryWritebackBuff: entity work.nbit_register generic map(108) port map(MemWBBuffDataIn, buffsClk, reset,'1', MemWBBuffDataOut);
+MemoryWritebackBuff: entity work.nbit_register generic map(129) port map(MemWBBuffDataIn, buffsClk, reset,'1', MemWBBuffDataOut);
 
 
 regInData <= MemWBBuffDataOut(55 downto 40) when MemWBBuffDataOut(112) = '1'
 						else MemWBBuffDataOut(87 downto 72) when MemWBBuffDataOut(112 downto 108) = "00011"
 						else MemWBBuffDataOut(128 downto 113) when (MemWBBuffDataOut(112 downto 108) = "00001" or MemWBBuffDataOut(112 downto 108) = "00111")
-						else MemWBBuffDataOut(107 downto 92) when MemWBBUffDataOut(112 downto 108) = "00101"
-						;
--- inDataMux: entity work.mux4x1 
--- generic map(16) 
--- port map(MemWBBuffDataOut(55 downto 40),	----- LS16B of ALU result
--- MemWBBuffDataOut(87 downto 72),				----- Imm value
--- fromMemory(31 downto 16),					----- from memory of effective address or pop instruction
--- fromMemory(31 downto 16),
--- wb_selector, regInData);
+						else MemWBBuffDataOut(107 downto 92) when MemWBBUffDataOut(112 downto 108) = "00101";
 
---------------------------------------------------- Hazard Detection Unit ----------------------------------------------------------
+
+---------------------------------------------------------------------------Hazard Detection Unit ----------------------------------------------------------
 hdu: entity work.Hazard_detection_unit port map(
 	exMemBuffDataOut(129),						----Ex_M_memwrite
 	exMemBuffDataOut(130),						----Ex_M_memread
@@ -261,7 +251,7 @@ hdu: entity work.Hazard_detection_unit port map(
 	INT,															----interrupt signal
 	exMemBuffDataOut(110),						----ex_mem_ret								
 	exMemBuffDataOut(110),						----ex_mem_rti
-        bufferedinstruction(15 downto 11),	     -----Opcode
+    bufferedinstruction(15 downto 11),	     -----Opcode
 	decExBuffDataOut(18 downto 16),              ------DtoEx_rsrc
 	fetch_enable,				     ----fetch_enable
 	pc_change_enable,			     ----pc_change_enable
@@ -269,12 +259,11 @@ hdu: entity work.Hazard_detection_unit port map(
 	stall_ret,			             ----stall ret signal
 	stall_rti,				     ----stall rti signal								
 	stall_int,	
-	stall_ld												                    ----stall int signal
-
+	stall_ld						----stall int signal
 );
 
 ----------------------------------------------------- Forwarding Unit -----------------------------------------------------------------------------
-fu: entity work.Fwd_unit port map (
+fu: entity work.Fwd_unit port map(
 exMemBuffDataOut(121 downto 106),					----EtoM_src_val
 exMemBuffDataOut(102 downto 87),					----EtoM_dst_val
 exMemBuffDataOut(124 downto 122),					----EtoM_src_addr
