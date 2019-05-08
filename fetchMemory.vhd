@@ -39,7 +39,7 @@ signal sp_value: std_logic_vector(31 downto 0);
 signal  bufferedInstruction: std_logic_vector(31 downto 0);
 Signal inFetchDecodeBuffer : std_logic_vector(15 downto 0);
 signal fetchDecBuffDataIn, fetchDecBuffDataOut: std_logic_vector(47 downto 0);
-signal decExBuffDataIn, decExBuffDataOut: std_logic_vector(151 downto 0);
+signal decExBuffDataIn, decExBuffDataOut: std_logic_vector(152 downto 0);
 signal exMemBuffDataIn, exMemBuffDataOut: std_logic_vector(182 downto 0);
 signal MemWBBuffDataIn, MemWBBuffDataOut: std_logic_vector(128 downto 0);
 
@@ -84,10 +84,6 @@ decExBuffDataIn(89 downto 70) <= dec_ex_pc;
 decExbuffDataIn(69 downto 38) <= dec_ex_sp;
 decExBuffDataIn(37 downto 19) <= readAddress1 & regFileOutData1; --- DST address and value
 decExBuffDataIn(18 downto 0) <= readAddress2 & regFileOutData2; --- SRC address and value
-
--- Set the output port.
-outport regFileOutData1 <= when out_type = '1'
-		else (others => 'Z');
 
 ---- Execute to Memory Data Buffer
 exMemBuffDataIn(166)<= decExBuffDataOut(129);			----- decode to execute mul signal
@@ -180,7 +176,12 @@ MemWBBuffDataOut(16 downto 1),
 regFileOutData1, regFileOutData2);			----------register output data
 
 decExBuffDataIn(151 downto 136) <= fetchDecBuffDataOut(47 downto 32);
-decodeExecuteBuff: entity work.nbit_register generic map(152) port map(decExBuffDataIn, buffsClk, reset,'1', decExBuffDataOut);
+decExBuffDatain(152) <= out_type;
+decodeExecuteBuff: entity work.nbit_register generic map(153) port map(decExBuffDataIn, buffsClk, reset,'1', decExBuffDataOut);
+
+-- Set the output port.
+outport <= fwd_data2 when decExBuffDataOut(152) = '1'
+		else (others => 'Z');
 
 --------------------------------------------------------- Execute Stage ------------------------------------------------------------------
 
@@ -232,7 +233,7 @@ mem_write,
 mem_read);
 
 ---------------------------------------------------- Write back stage --------------------------------------------------------------
-MemoryWritebackBuff: entity work.nbit_register generic map(108) port map(MemWBBuffDataIn, buffsClk, reset,'1', MemWBBuffDataOut);
+MemoryWritebackBuff: entity work.nbit_register generic map(129) port map(MemWBBuffDataIn, buffsClk, reset,'1', MemWBBuffDataOut);
 
 
 regInData <= MemWBBuffDataOut(55 downto 40) when MemWBBuffDataOut(112) = '1'
@@ -275,8 +276,8 @@ hdu: entity work.Hazard_detection_unit port map(
 
 ----------------------------------------------------- Forwarding Unit -----------------------------------------------------------------------------
 fu: entity work.Fwd_unit port map (
-exMemBuffDataOut(121 downto 106),					----EtoM_src_val
-exMemBuffDataOut(102 downto 87),					----EtoM_dst_val
+exMemBuffDataOut(165 downto 150),					----EtoM_src_val
+exMemBuffDataOut(149 downto 134),					----EtoM_dst_val
 exMemBuffDataOut(124 downto 122),					----EtoM_src_addr
 exMemBuffDataOut(105 downto 103),					----EtoM_dst_addr
 MemWBBuffDataOut(35 downto 20),				----MtoWB_src_val
