@@ -4,8 +4,11 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
 Entity FetchMemoryUnit is 
-port(	clock, reset, mem_write, mem_read, INT: in std_logic;
+port(
+	clock, reset, mem_write, mem_read, INT: in std_logic;
 	new_pc: in std_logic_vector(31 downto 0);
+	inport : in std_logic_vector(15 downto 0);
+	outport : out std_logic_vector(15 downto 0);
 	memory1_location : in std_logic_vector(31 downto 0); -- instruction in memory[1] location
 	program_counter: out std_logic_vector(31 downto 0)
 
@@ -32,9 +35,11 @@ signal regFileOutData1, regFileOutData2, fwd_data1, fwd_data2: std_logic_vector(
 
 --------------------- intermediate buffers signals -------------------------------------------------------------------
 signal  bufferedInstruction: std_logic_vector(31 downto 0);
-signal decExBuffDataIn, decExBuffDataOut: std_logic_vector(135 downto 0);
-signal exMemBuffDataIn, exMemBuffDataOut: std_logic_vector(166 downto 0);
-signal MemWBBuffDataIn, MemWBBuffDataOut: std_logic_vector(91 downto 0);
+Signal inFetchDecodeBuffer : std_logic_vector(15 downto 0);
+signal fetchDecBuffDataIn, fetchDecBuffDataOut: std_logic_vector(47 downto 0);
+signal decExBuffDataIn, decExBuffDataOut: std_logic_vector(151 downto 0);
+signal exMemBuffDataIn, exMemBuffDataOut: std_logic_vector(182 downto 0);
+signal MemWBBuffDataIn, MemWBBuffDataOut: std_logic_vector(107 downto 0);
 
 --------------- buffers reset signals and enables
 signal fetch_dec_buffRst, fetch_dec_buffEn, dec_ex_buffRst, dec_ex_buffEn, buffsClk: std_logic;
@@ -64,6 +69,9 @@ dec_ex_effective_address(12 downto 0) <= bufferedInstruction(31 downto 19);
 readAddress1 <= bufferedInstruction(10 downto 8); --destination address
 readAddress2 <= bufferedInstruction(7 downto 5); --- source address
 writeAddress <= bufferedInstruction(10 downto 8); ---destination is the first oeprand
+
+--- Fetch to Decode buffer
+
  
 ---- Decode to Execute data buffer
 decExBuffDataIn(128 downto 125) <= bufferedInstruction(4 downto 1);
@@ -121,8 +129,9 @@ fetchedInstruction);
 --JMP_RESULT should come from the buffer 
 
 bufferedInstructionOrg(31 downto 16) <= fetchedInstruction(15 downto 0);
-fetchDecodeBuff: entity work.nbit_register generic map(32) port map(fetchedInstruction, buffsClk, reset, '1', bufferedInstruction);
-
+fetchDecBuffDataIn <= inport&fetchedInstruction;
+fetchDecodeBuff: entity work.nbit_register generic map(48) port map(fetchDecBuffDataIn, buffsClk, reset, '1', fetchDecBuffDataOut);
+bufferedInstruction <= fetchDecBuffDataOut(31 downto 0);
 ------------------------------------------------------------------- decode stage ---------------------------------------------------------
 --------------------------------------------- control unit
 controlUnit: entity work.Control_Unit port map(
@@ -157,7 +166,8 @@ MemWB_write_addr, 									----------write address
 regInData,													----------register input data
 regFileOutData1, regFileOutData2);			----------register output data
 
-decodeExecuteBuff: entity work.nbit_register generic map(136) port map(decExBuffDataIn, buffsClk, reset,'1', decExBuffDataOut);
+decExBuffDataIn(151 downto 135) <= fetchDecBuffDataOut(47 downto 32);
+decodeExecuteBuff: entity work.nbit_register generic map(152) port map(decExBuffDataIn, buffsClk, reset,'1', decExBuffDataOut);
 
 --------------------------------------------------------- Execute Stage ------------------------------------------------------------------
 
@@ -189,7 +199,8 @@ DecEx_dst_val,											--------destination value
 DecEx_sh_amount, 										--------shift amount
 alu_result, flags_result);
 
-executeMemoryBuff: entity work.nbit_register generic map(167) port map(exMemBuffDataIn, buffsClk, reset,'1', exMemBuffDataOut);
+exMemBuffDataIn (182 downto 167) <= decExBuffDataOut(151 downto 136);
+executeMemoryBuff: entity work.nbit_register generic map(183) port map(exMemBuffDataIn, buffsClk, reset,'1', exMemBuffDataOut);
 
 -------------------------------------------------------- Memory Stage -------------------------------------------------------------
 tristateBuffer: entity work.tristate port map(fromMemory,dataBus,fetch_enable);
@@ -208,7 +219,8 @@ mem_write,
 mem_read);
 
 ---------------------------------------------------- Write back stage --------------------------------------------------------------
-MemoryWritebackBuff: entity work.nbit_register generic map(92) port map(MemWBBuffDataIn, buffsClk, reset,'1', MemWBBuffDataOut);
+MemWBBuffDataIn(107 downto 92) <= exMemBuffDataOut(182 downto 167);
+MemoryWritebackBuff: entity work.nbit_register generic map(108) port map(MemWBBuffDataIn, buffsClk, reset,'1', MemWBBuffDataOut);
 regInData <= MemWBBuffDataOut(55 downto 40); --------------------- write data to reg file
 
 
