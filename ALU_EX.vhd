@@ -34,15 +34,19 @@ signal shiftRightCarry: std_logic;
 begin
 
 
-process(clock) begin
-	if(rising_edge(clock)) then
-		output <= oup;
-		
- 	end if;
-	if (shift_amount = "0000") then
-		shiftRightCarry<='0';
+process(clock, reset) begin
+	if(reset = '1') then
+		output <= (others => '0');
 	else 
-		shiftRightCarry<= destination(to_integer(unsigned(shift_amount))-1);
+		if(rising_edge(clock)) then
+			output <= oup;
+			
+		end if;
+		if (shift_amount = "0000") then
+			shiftRightCarry<='0';
+		else 
+			shiftRightCarry<= destination(to_integer(unsigned(shift_amount))-1);
+		end if;
 	end if;
  end process;
 
