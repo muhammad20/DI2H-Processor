@@ -8,7 +8,7 @@ port(
 opcode: in std_logic_vector (4 downto 0);
 opcodeout: out std_logic_vector (4 downto 0);
 ALU_Src,WB_En,ALU_En,Jmp,MemtoReg,MemWr,MemRd,Push_Sig,Pop_Sig, 
-setc, clrc, not_op, inc, dec, multiply, h_type: out std_logic);
+setc, clrc, not_op, inc, dec, multiply, h_type,type_out: out std_logic);
 
 end entity;
 
@@ -50,7 +50,7 @@ in2<= (opcode(0)and((opcode(2)xor opcode(1))or(opcode(2)and opcode(1))));
 in3<= (opcode(2)and((opcode(1)xnor opcode(0))or(opcode(1)and(not(opcode(0))))));
 in4<= (not(opcode(2)or opcode(1)));
 
-
+type_out <= not opcode(4) and not opcode(3) and opcode(2) and opcode(1) and not opcode(0);
 m1: mux4 generic map(1) port map(in2,'0','1',in1,opcode(4),opcode(3),wb1);
 WB_en <= wb1 or (not opcode(4) and not opcode(3) and not opcode(2) and not opcode(1) and opcode(0));
 
