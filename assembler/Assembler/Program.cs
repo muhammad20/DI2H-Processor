@@ -30,6 +30,9 @@ namespace Assembler
             using(var reader = new StreamReader(filename))
             using(var writer = new StreamWriter(outputFilename))
             {
+                writer.WriteLine("// memory data file (do not edit the following line - required for mem load use");
+                writer.WriteLine("// instance=/fetchmemoryunit/memory/r0/s_ram");
+                writer.WriteLine("// format=mti addressradix=h dataradix=h version=1.0 wordsperline=1");
                 while(!reader.EndOfStream)
                 {
                     // Get each line of the instructions, this is still assembly code.
