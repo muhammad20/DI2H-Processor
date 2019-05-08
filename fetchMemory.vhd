@@ -23,7 +23,7 @@ signal fromFetch: std_logic_vector(31 downto 0);
 signal fetchedInstruction: std_logic_vector(31 downto 0);
 signal readAddress1, readAddress2, writeAddress: std_logic_vector(2 downto 0);
 signal regInData: std_logic_vector(15 downto 0);
-signal pc_change_enable, stall_mul,stall_rti,stall_ret,stall_INT,stall_ld: std_logic;
+signal pc_change_enable, stall_mul,stall_rti,stall_ret,stall_INT,stall_ld,out_type: std_logic;
 
 
 signal push_sig, pop_sig, ret_rti, jmp_enable, fetch_enable: std_logic;
@@ -32,6 +32,8 @@ signal dec_ex_effective_address, dec_ex_pc: std_logic_vector(19 downto 0);
 
 signal dec_ex_sp: std_logic_vector(31 downto 0);
 signal regFileOutData1, regFileOutData2, fwd_data1, fwd_data2: std_logic_vector(15 downto 0); 
+signal sp_add1, sp_add2, sp_sub1, sp_sub2: std_logic;
+signal sp_value: std_logic_vector(31 downto 0);
 
 --------------------- intermediate buffers signals -------------------------------------------------------------------
 signal  bufferedInstruction: std_logic_vector(31 downto 0);
@@ -82,6 +84,10 @@ decExBuffDataIn(89 downto 70) <= dec_ex_pc;
 decExbuffDataIn(69 downto 38) <= dec_ex_sp;
 decExBuffDataIn(37 downto 19) <= readAddress1 & regFileOutData1; --- DST address and value
 decExBuffDataIn(18 downto 0) <= readAddress2 & regFileOutData2; --- SRC address and value
+
+-- Set the output port.
+outport regFileOutData1 <= when out_type = '1'
+		else (others => 'Z');
 
 ---- Execute to Memory Data Buffer
 exMemBuffDataIn(166)<= decExBuffDataOut(129);			----- decode to execute mul signal
@@ -153,18 +159,20 @@ decExBuffDataIn(134),								----------not
 decExBuffDataIn(130),								----------inc
 decExBuffDataIn(131),								----------dec
 decExBuffDataIn(129),								----------multiply signal
-decExBuffDataIn(135));								----------h_type
-
+decExBuffDataIn(135),								----------h_type
+out_type);
 ---------------------------------------------------------------- register file
 MemWB_wb <= MemWBBuffDataOut(39);
 MemWB_write_addr <= MemWBBuffDataOut(38 downto 36);
 registerFile: entity work.Register_File port map(
-'1',																----------read enable
+'1',															----------read enable
 MemWB_wb, 												----------write enable
-clock, reset,													----------clock and reset
+clock, reset, MemWBBuffDataOut(0),													----------clock and reset
 readAddress1, readAddress2,						----------read address of src and dst
 MemWB_write_addr, 									----------write address
-regInData,													----------register input data
+MemWBBuffDataOut(19 downto 17),												--------multiply second write address.
+regInData,									----------register input data
+MemWBBuffDataOut(16 downto 1),
 regFileOutData1, regFileOutData2);			----------register output data
 
 decExBuffDataIn(151 downto 136) <= fetchDecBuffDataOut(47 downto 32);
@@ -272,6 +280,16 @@ fwd_data1,									----fwd_data1
 fwd_data2									----fwd_data2
 );
 
+------------------------------------------------------------ Stack pointer --------------------------------------------------------------------
+stack_pointer: entity work.StackPointer port map(
+clock,
+sp_add1,
+sp_add2,
+sp_sub1,
+sp_sub2,
+reset,
+sp_value
+);
 
 end Architecture;
 
