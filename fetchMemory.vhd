@@ -32,6 +32,8 @@ signal dec_ex_effective_address, dec_ex_pc: std_logic_vector(19 downto 0);
 
 signal dec_ex_sp: std_logic_vector(31 downto 0);
 signal regFileOutData1, regFileOutData2, fwd_data1, fwd_data2: std_logic_vector(15 downto 0); 
+signal sp_add1, sp_add2, sp_sub1, sp_sub2: std_logic;
+signal sp_value: std_logic_vector(31 downto 0);
 
 --------------------- intermediate buffers signals -------------------------------------------------------------------
 signal  bufferedInstruction: std_logic_vector(31 downto 0);
@@ -272,6 +274,16 @@ fwd_data1,									----fwd_data1
 fwd_data2									----fwd_data2
 );
 
+------------------------------------------------------------ Stack pointer --------------------------------------------------------------------
+stack_pointer: entity work.StackPointer port map(
+clock,
+sp_add1,
+sp_add2,
+sp_sub1,
+sp_sub2,
+reset,
+sp_value
+);
 
 end Architecture;
 
