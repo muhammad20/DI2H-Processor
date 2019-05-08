@@ -151,14 +151,15 @@ decExBuffDataIn(135));								----------h_type
 MemWB_wb <= MemWBBuffDataOut(39);
 MemWB_write_addr <= MemWBBuffDataOut(38 downto 36);
 registerFile: entity work.Register_File port map(
-'1',																----------read enable
+'1',															----------read enable
 MemWB_wb, 												----------write enable
-clock, reset,													----------clock and reset
+clock, reset, MemWBBuffDataOut(0),													----------clock and reset
 readAddress1, readAddress2,						----------read address of src and dst
 MemWB_write_addr, 									----------write address
-regInData,													----------register input data
+MemWBBuffDataOut(19 downto 17),												--------multiply second write address.
+regInData,									----------register input data
+MemWBBuffDataOut(16 downto 1),
 regFileOutData1, regFileOutData2);			----------register output data
-
 decodeExecuteBuff: entity work.nbit_register generic map(136) port map(decExBuffDataIn, buffsClk, reset,'1', decExBuffDataOut);
 
 --------------------------------------------------------- Execute Stage ------------------------------------------------------------------
