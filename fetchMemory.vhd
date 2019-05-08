@@ -4,7 +4,7 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
 Entity FetchMemoryUnit is 
-port(	clock, reset, fetch_enable, mem_write, mem_read: in std_logic;
+port(	clock, reset, fetch_enable, mem_write, mem_read, INT: in std_logic;
 	new_pc: in std_logic_vector(31 downto 0);
 	memory1_location : in std_logic_vector(31 downto 0); -- instruction in memory[1] location
 	program_counter: out std_logic_vector(31 downto 0)
@@ -20,6 +20,7 @@ signal fromFetch: std_logic_vector(31 downto 0);
 signal fetchedInstruction: std_logic_vector(31 downto 0);
 signal readAddress1, readAddress2, writeAddress: std_logic_vector(2 downto 0);
 signal regInData: std_logic_vector(15 downto 0);
+signal pc_change_enable, stall_mul,stall_rti,stall_ret,stall_INT: std_logic;
 
 
 signal push_sig, pop_sig, ret_rti, jmp_result: std_logic;
@@ -107,9 +108,9 @@ fetch: entity work.FetchUnit port map(
 clock, 
 fetch_enable, 
 reset,
-'1',															-----------pc change enable		
-'0', 															-----------jmp enable
-jmp_result,
+pc_change_enable,									-----------pc change enable		
+jmp_enable, 											-----------jmp enable
+INT,
 mem_zero,
 mem_one,
 fromMemory(31 downto 16),
@@ -209,6 +210,29 @@ mem_read);
 ---------------------------------------------------- Write back stage --------------------------------------------------------------
 MemoryWritebackBuff: entity work.nbit_register generic map(92) port map(MemWBBuffDataIn, buffsClk, reset,'1', MemWBBuffDataOut);
 regInData <= MemWBBuffDataOut(55 downto 40); --------------------- write data to reg file
+
+
+--------------------------------------------------- Hazard Detection Unit ----------------------------------------------------------
+hdu: entity work.Hazard_detection_unit port map(
+	exMemBuffDataOut(129),						----Ex_M_memwrite
+	exMemBuffDataOut(130),						----Ex_M_memread
+	decExBuffDataOut(119),							----dec_ex_memread
+	decExBuffDataOut(116),							----dec_ex_writeback
+	deExBuffDataOut(37 downto 35),			----dec_ex_DST
+	exMemBuffDataOut(124 downto 122),	----ex_mem_SRC
+	exMemBuffDataOut(105 downto 103),	----ex_mem_DST
+	decExBuffDataOut(129),							----multiply signal
+	INT,															----interrupt signal
+	exMemBuffDataOut(110),						----ex_mem_ret								
+	exMemBuffDataOut(110),						----ex_mem_rti
+	fetch_enable,											----fetch_enable
+	pc_change_enable,									----pc_change_enable
+	stall_mul													----stall mul signal
+	stall_ret													----stall ret signal
+	stall_rti														----stall rti signal								
+	stall_int								                    ----stall int signal
+);
+
 
 end Architecture;
 
