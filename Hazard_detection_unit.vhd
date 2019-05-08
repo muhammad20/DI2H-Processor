@@ -8,7 +8,7 @@ port(
 EtoM_memwrite,EtoM_memread,DtoE_memread,DtoE_wb: in std_logic;
 DtoE_rdst,EtoM_rsrc,EtoM_rdst: in std_logic_vector(2 downto 0);	
 MUL,INT,EtoM_ret,EtoM_rti: in std_logic;
-fetch_en,pc_en,stall: out std_logic);
+fetch_en,pc_en,stall_Mul,stall_ret,stall_rti,stall_INT: out std_logic);
 end entity;
 
 architecture arch of Hazard_detection_unit is 
@@ -29,5 +29,8 @@ c0: comparator port map(DtoE_rdst,EtoM_rsrc,out1);
 c1: comparator port map(DtoE_rdst,EtoM_rdst,out2);
 
 pc_en <= x nand (out1 or out2);
-stall <= MUL or INT or EtoM_ret or EtoM_rti;       
+stall_Mul <= MUL; 
+stall_ret <= EtoM_ret;  
+stall_rti <= EtoM_rti;  
+stall_INT <= INT;        
 end architecture;
