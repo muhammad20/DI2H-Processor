@@ -4,7 +4,7 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
 Entity FetchMemoryUnit is 
-port(	clock, reset, fetch_enable, mem_write, mem_read: in std_logic;
+port(	clock, reset, mem_write, mem_read, INT: in std_logic;
 	new_pc: in std_logic_vector(31 downto 0);
 	memory1_location : in std_logic_vector(31 downto 0); -- instruction in memory[1] location
 	program_counter: out std_logic_vector(31 downto 0)
@@ -20,14 +20,17 @@ signal fromFetch: std_logic_vector(31 downto 0);
 signal fetchedInstruction: std_logic_vector(31 downto 0);
 signal readAddress1, readAddress2, writeAddress: std_logic_vector(2 downto 0);
 signal regInData: std_logic_vector(15 downto 0);
+signal pc_change_enable, stall_mul,stall_rti,stall_ret,stall_INT,stall_ld: std_logic;
 
 
-signal push_sig, pop_sig, ret_rti, jmp_result: std_logic;
+signal push_sig, pop_sig, ret_rti, jmp_enable, fetch_enable: std_logic;
 signal jmp_type: std_logic_vector(1 downto 0);
 signal dec_ex_effective_address, dec_ex_pc: std_logic_vector(19 downto 0);
 
 signal dec_ex_sp: std_logic_vector(31 downto 0);
-signal regFileOutData1, regFileOutData2: std_logic_vector(15 downto 0); 
+signal regFileOutData1, regFileOutData2, fwd_data1, fwd_data2: std_logic_vector(15 downto 0); 
+signal sp_add1, sp_add2, sp_sub1, sp_sub2: std_logic;
+signal sp_value: std_logic_vector(31 downto 0);
 
 --------------------- intermediate buffers signals -------------------------------------------------------------------
 signal  bufferedInstruction: std_logic_vector(31 downto 0);
@@ -55,7 +58,7 @@ fetch_dec_buffRst <= reset;
 fetch_dec_buffEn <= '1';
 dec_ex_buffRst <= reset;
 dec_ex_buffEn <= '1';
-jmp_result <= '0';
+jmp_enable <= '0';
 buffsClk <= not clock;
 
 dec_ex_effective_address(19 downto 13)<= bufferedInstruction(7 downto 1);
@@ -74,10 +77,10 @@ decExBuffDataIn(37 downto 19) <= readAddress1 & regFileOutData1; --- DST address
 decExBuffDataIn(18 downto 0) <= readAddress2 & regFileOutData2; --- SRC address and value
 
 ---- Execute to Memory Data Buffer
-exMemBuffDataIn(166)<= decExBuffDataOut(129);
+exMemBuffDataIn(166)<= decExBuffDataOut(129);			----- decode to execute mul signal
 exMemBuffDataIn(165 downto 134)<= alu_result;
 exMemBuffDataIn(133 downto 131) <= flags_result;
-exMemBuffDataIn(130 downto 125) <= decExBuffDataOut(119 downto 116) & decExBuffDataOut(110) & jmp_result; --Memrd, memwr, memtoreg, wb_en, ret_rti, jmp_enable
+exMemBuffDataIn(130 downto 125) <= decExBuffDataOut(119 downto 116) & decExBuffDataOut(110) & jmp_enable; --Memrd, memwr, memtoreg, wb_en, ret_rti, jmp_enable
 exMemBuffDataIn(124 downto 106) <= decExBuffDataOut(18 downto 0) ; -- SRC address and value
 exMemBuffDataIn(105 downto 87) <= decExBuffDataOut(37 downto 19); -- DST address and value
 exMemBuffDataIn(86 downto 67) <= decExBuffDataOut(89 downto 70); --PC
@@ -107,9 +110,9 @@ fetch: entity work.FetchUnit port map(
 clock, 
 fetch_enable, 
 reset,
-'1',															-----------pc change enable		
-'0', 															-----------jmp enable
-jmp_result,
+pc_change_enable,									-----------pc change enable		
+INT, 											-----------jmp enable
+jmp_enable,
 mem_zero,
 mem_one,
 fromMemory(31 downto 16),
@@ -125,8 +128,8 @@ fetchDecodeBuff: entity work.nbit_register generic map(32) port map(fetchedInstr
 ------------------------------------------------------------------- decode stage ---------------------------------------------------------
 --------------------------------------------- control unit
 controlUnit: entity work.Control_Unit port map(
-bufferedInstruction(15 downto 11),     		----------in opcode
-decExBuffDataIn(124 downto 120), 			----------out opcode
+bufferedInstruction(15 downto 11),     		                                ----------in opcode
+decExBuffDataIn(124 downto 120), 			                        ----------out opcode
 decExBuffDataIn(114), 								----------alu src
 decExBuffDataIn(116),								----------write back enable
 decExBuffDataIn(115),								----------alu enable
@@ -134,8 +137,8 @@ decExBuffDataIn(113), 								----------jmp enable
 decExBuffDataIn(117),								----------memtoReg
 decExBuffDataIn(118),								----------memWrite
 decExBuffDataIn(119),								----------memRead
-push_sig,														----------push signal
-pop_sig, 														----------pop signal
+push_sig,									----------push signal
+pop_sig, 									----------pop signal
 decExBuffDataIn(132),								----------setc
 decExBuffDataIn(133),								----------clrc
 decExBuffDataIn(134),								----------not
@@ -209,6 +212,65 @@ mem_read);
 ---------------------------------------------------- Write back stage --------------------------------------------------------------
 MemoryWritebackBuff: entity work.nbit_register generic map(92) port map(MemWBBuffDataIn, buffsClk, reset,'1', MemWBBuffDataOut);
 regInData <= MemWBBuffDataOut(55 downto 40); --------------------- write data to reg file
+
+
+--------------------------------------------------- Hazard Detection Unit ----------------------------------------------------------
+hdu: entity work.Hazard_detection_unit port map(
+	exMemBuffDataOut(129),						----Ex_M_memwrite
+	exMemBuffDataOut(130),						----Ex_M_memread
+	decExBuffDataOut(119),							----dec_ex_memread
+	decExBuffDataOut(116),							----dec_ex_writeback
+	decExBuffDataOut(37 downto 35),			----dec_ex_DST
+	exMemBuffDataOut(124 downto 122),	----ex_mem_SRC
+	exMemBuffDataOut(105 downto 103),	----ex_mem_DST
+	decExBuffDataOut(129),							----multiply signal
+	INT,															----interrupt signal
+	exMemBuffDataOut(110),						----ex_mem_ret								
+	exMemBuffDataOut(110),						----ex_mem_rti
+        bufferedinstruction(15 downto 11),	     -----Opcode
+	decExBuffDataOut(18 downto 16),              ------DtoEx_rsrc
+	fetch_enable,				     ----fetch_enable
+	pc_change_enable,			     ----pc_change_enable
+	stall_mul,				     ----stall mul signal
+	stall_ret,			             ----stall ret signal
+	stall_rti,				     ----stall rti signal								
+	stall_int,	
+	stall_ld												                    ----stall int signal
+
+);
+
+----------------------------------------------------- Forwarding Unit -----------------------------------------------------------------------------
+fu: entity work.Fwd_unit port map (
+exMemBuffDataOut(121 downto 106),					----EtoM_src_val
+exMemBuffDataOut(102 downto 87),					----EtoM_dst_val
+exMemBuffDataOut(124 downto 122),					----EtoM_src_addr
+exMemBuffDataOut(105 downto 103),					----EtoM_dst_addr
+MemWBBuffDataOut(35 downto 20),				----MtoWB_src_val
+MemWBBuffDataOut(16 downto 1),				----MtoWb_dst_val
+MemWBBuffDataOut(38 downto 36),				----MtoWb_src_addr
+MemWBBuffDataOut(19 downto 17),				----MtoWb_src_addr
+decExBuffDataOut(15 downto 0),					----DtoEx_src_val
+decExBuffDataOut(34 downto 19),					----DtoEx_dst_val
+decExBuffDataOut(18 downto 16),					----DtoEx_src_addr
+decExBuffDataOut(37 downto 35),					----DtoEx_dst_addr
+exMemBuffDataOut(127),					----EtoM_wb
+MemWBBuffDataOut(39),				----MtoWB_wb
+MemWBBuffDataOut(0),				----MtoWB_mul
+exMemBuffDataOut(129),					----EtoM_mul
+fwd_data1,									----fwd_data1
+fwd_data2									----fwd_data2
+);
+
+------------------------------------------------------------ Stack pointer --------------------------------------------------------------------
+stack_pointer: entity work.StackPointer port map(
+clock,
+sp_add1,
+sp_add2,
+sp_sub1,
+sp_sub2,
+reset,
+sp_value
+);
 
 end Architecture;
 
