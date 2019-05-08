@@ -6,6 +6,8 @@ use ieee.numeric_std.all;
 Entity FetchMemoryUnit is 
 port(	clock, reset, mem_write, mem_read, INT: in std_logic;
 	new_pc: in std_logic_vector(31 downto 0);
+	inport : in std_logic_vector(15 downto 0);
+	outport : out std_logic_vector(15 downto 0);
 	memory1_location : in std_logic_vector(31 downto 0); -- instruction in memory[1] location
 	program_counter: out std_logic_vector(31 downto 0)
 
@@ -75,6 +77,10 @@ decExBuffDataIn(89 downto 70) <= dec_ex_pc;
 decExbuffDataIn(69 downto 38) <= dec_ex_sp;
 decExBuffDataIn(37 downto 19) <= readAddress1 & regFileOutData1; --- DST address and value
 decExBuffDataIn(18 downto 0) <= readAddress2 & regFileOutData2; --- SRC address and value
+
+-- Set the output port.
+outport regFileOutData1 <= when out_type = '1'
+		else (others => 'Z');
 
 ---- Execute to Memory Data Buffer
 exMemBuffDataIn(166)<= decExBuffDataOut(129);			----- decode to execute mul signal
