@@ -84,7 +84,7 @@ regin6 <= datain_mul when output_write2(5) = '1' else datain;
 regin7 <= datain_mul when output_write2(6) = '1' else datain;
 regin8 <= datain_mul when output_write2(7) = '1' else datain;
 
-process(clk)
+process(clk, rst)
 begin
 -- if(rst='1') then
 -- 	endec_write <= '0';
@@ -104,14 +104,19 @@ begin
 -- 	end if;
 -- end if;
 	if(rising_edge(clk)) then
-		if(Write_Sig = '1' and Read_Sig = '1' and Address_read1 = Address_write1) then
+		if (Write_Sig = '1' and mul_signal = '1' and Read_Sig = '1' and Address_read1 = Address_write2) then 
+			dataout1 <= datain_mul;
+		elsif (Write_Sig = '1' and Read_Sig = '1' and Address_read1 = Address_write1) then 
 			dataout1 <= datain;
-		else
+		else 
 			dataout1 <= registerOutput1;
 		end if;
-		if(Write_Sig = '1' and Read_Sig = '1' and Address_read2 = Address_write1) then
+
+		if (Write_Sig = '1' and mul_signal = '1' and Read_Sig = '1' and Address_read2 = Address_write2) then
+			dataout2 <= datain_mul;
+		elsif (Write_Sig = '1' and Read_Sig = '1' and Address_read2 = Address_write1) then
 			dataout2 <= datain;
-		else	
+		else
 			dataout2 <= registerOutput2;
 		end if;
 	end if;
