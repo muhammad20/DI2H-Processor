@@ -20,7 +20,7 @@ signal fromFetch: std_logic_vector(31 downto 0);
 signal fetchedInstruction: std_logic_vector(31 downto 0);
 signal readAddress1, readAddress2, writeAddress: std_logic_vector(2 downto 0);
 signal regInData: std_logic_vector(15 downto 0);
-signal pc_change_enable, stall_mul,stall_rti,stall_ret,stall_INT: std_logic;
+signal pc_change_enable, stall_mul,stall_rti,stall_ret,stall_INT,stall_ld: std_logic;
 
 
 signal push_sig, pop_sig, ret_rti, jmp_result: std_logic;
@@ -126,8 +126,8 @@ fetchDecodeBuff: entity work.nbit_register generic map(32) port map(fetchedInstr
 ------------------------------------------------------------------- decode stage ---------------------------------------------------------
 --------------------------------------------- control unit
 controlUnit: entity work.Control_Unit port map(
-bufferedInstruction(15 downto 11),     		----------in opcode
-decExBuffDataIn(124 downto 120), 			----------out opcode
+bufferedInstruction(15 downto 11),     		                                ----------in opcode
+decExBuffDataIn(124 downto 120), 			                        ----------out opcode
 decExBuffDataIn(114), 								----------alu src
 decExBuffDataIn(116),								----------write back enable
 decExBuffDataIn(115),								----------alu enable
@@ -135,8 +135,8 @@ decExBuffDataIn(113), 								----------jmp enable
 decExBuffDataIn(117),								----------memtoReg
 decExBuffDataIn(118),								----------memWrite
 decExBuffDataIn(119),								----------memRead
-push_sig,														----------push signal
-pop_sig, 														----------pop signal
+push_sig,									----------push signal
+pop_sig, 									----------pop signal
 decExBuffDataIn(132),								----------setc
 decExBuffDataIn(133),								----------clrc
 decExBuffDataIn(134),								----------not
@@ -225,12 +225,15 @@ hdu: entity work.Hazard_detection_unit port map(
 	INT,															----interrupt signal
 	exMemBuffDataOut(110),						----ex_mem_ret								
 	exMemBuffDataOut(110),						----ex_mem_rti
-	fetch_enable,											----fetch_enable
-	pc_change_enable,									----pc_change_enable
-	stall_mul													----stall mul signal
-	stall_ret													----stall ret signal
-	stall_rti														----stall rti signal								
-	stall_int								                    ----stall int signal
+        bufferedinstruction(15 downto 11),	     -----Opcode
+	decExBuffDataOut(18 downto 16),              ------DtoEx_rsrc
+	fetch_enable,				     ----fetch_enable
+	pc_change_enable,			     ----pc_change_enable
+	stall_mul,				     ----stall mul signal
+	stall_ret,			             ----stall ret signal
+	stall_rti,				     ----stall rti signal								
+	stall_int,	
+	stall_ld												                    ----stall int signal
 );
 
 
