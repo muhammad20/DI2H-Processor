@@ -55,7 +55,10 @@ signal MemWB_wb, DecEx_setc, DecEx_clrc, DecEx_inc, DecEx_dec, DecEx_not, DecEx_
 signal MemWB_write_addr, htype_op: std_logic_vector(2 downto 0);
 signal DecEx_src_val, DecEx_dst_val: std_logic_vector(15 downto 0);
 signal DecEx_sh_amount: std_logic_vector(3 downto 0);
-signal mem_read, mem_write: std_logic;
+signal mem_read, mem_write, databus_wen: std_logic;
+
+Signal ramAddress : std_logic_vector(19 downto 0);
+Signal memWriteValue, mem_valueInput : std_logic_vector(15 downto 0);
 
 begin
 mem_write <= exMemBuffDataOut(129);
@@ -86,12 +89,12 @@ decExBuffDataIn(37 downto 19) <= readAddress1 & regFileOutData1; --- DST address
 decExBuffDataIn(18 downto 0) <= readAddress2 & regFileOutData2; --- SRC address and value
 
 ---- Execute to Memory Data Buffer
-exMemBuffDataIn(166)<= decExBuffDataOut(129);			----- decode to execute mul signal
-exMemBuffDataIn(165 downto 134)<= alu_result;
+exMemBuffDataIn(166) <= decExBuffDataOut(129);			----- decode to execute mul signal
+exMemBuffDataIn(165 downto 134)<= X"0000" & decExBuffDataOut(109 downto 94) when decExBuffDataOut(124 downto 120) = "00011" else alu_result;
 exMemBuffDataIn(133 downto 131) <= flags_result;
 exMemBuffDataIn(130 downto 125) <= decExBuffDataOut(119 downto 116) & decExBuffDataOut(110) & jmp_enable; --Memrd, memwr, memtoreg, wb_en, ret_rti, jmp_enable
-exMemBuffDataIn(124 downto 106) <= decExBuffDataOut(18 downto 0) ; -- SRC address and value
-exMemBuffDataIn(105 downto 87) <= decExBuffDataOut(37 downto 19); -- DST address and value
+exMemBuffDataIn(124 downto 106) <= decExBuffDataOut(18 downto 16)&fwd_data1; -- SRC address and value
+exMemBuffDataIn(105 downto 87) <= decExBuffDataOut(37 downto 35)&fwd_data2; -- DST address and value
 exMemBuffDataIn(86 downto 67) <= decExBuffDataOut(89 downto 70); --PC
 exMemBuffDataIn(66 downto 35) <= decExbuffDataOut(69 downto 38); --SP
 exMemBuffDataIn(34 downto 15) <= decExBuffDataOut(109 downto 90); -- Effective Address
@@ -216,7 +219,12 @@ exMemBuffDataIn (182 downto 167) <= decExBuffDataOut(151 downto 136);
 executeMemoryBuff: entity work.nbit_register generic map(183) port map(exMemBuffDataIn, buffsClk, reset,'1', exMemBuffDataOut);
 
 -------------------------------------------------------- Memory Stage -------------------------------------------------------------
-tristateBuffer: entity work.tristate port map(fromMemory,dataBus,fetch_enable);
+-- tristateBuffer: entity work.tristate port map(fromMemory, dataBus, databus_wen);
+databus_wen <= fetch_enable or mem_write or mem_read;
+-- fromMemory <= X"0000"&exMembuffDataOut(102 downto 87) when mem_write = '1' else fetchedInstruction;
+
+-- EA vs Fetch address.
+ramAddress <= fromFetch(19 downto 0) when fetch_enable = '1' else exMemBuffDataOut(34 downto 15);
 
 ------------------------memory unit
 memory: entity work.memory_unit 
@@ -225,7 +233,8 @@ fromMemory(31 downto 16),
 mem_zero, 
 mem_one, 
 fromMemory(15 downto 0),
-fromFetch(19 downto 0),
+ramAddress,
+exMembuffDataOut(102 downto 87),
 clock,
 reset,
 mem_write, 
