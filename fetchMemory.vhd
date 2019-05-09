@@ -5,7 +5,7 @@ use ieee.numeric_std.all;
 
 Entity FetchMemoryUnit is 
 port(
-	clock, reset, mem_write, mem_read, INT: in std_logic;
+	clock, reset, INT: in std_logic;
 	new_pc: in std_logic_vector(31 downto 0);
 	inport : in std_logic_vector(15 downto 0);
 	outport : out std_logic_vector(15 downto 0);
@@ -55,9 +55,11 @@ signal MemWB_wb, DecEx_setc, DecEx_clrc, DecEx_inc, DecEx_dec, DecEx_not, DecEx_
 signal MemWB_write_addr, htype_op: std_logic_vector(2 downto 0);
 signal DecEx_src_val, DecEx_dst_val: std_logic_vector(15 downto 0);
 signal DecEx_sh_amount: std_logic_vector(3 downto 0);
+signal mem_read, mem_write: std_logic;
 
 begin
-
+mem_write <= exMemBuffDataOut(129);
+mem_read <= fetch_enable or exMemBuffDataOut(130);
 fetch_dec_buffRst <= reset;
 fetch_dec_buffEn <= '1';
 dec_ex_buffRst <= reset;
@@ -205,8 +207,8 @@ DecEx_dec, 													--------dec
 DecEx_not, 													--------not
 DecEx_htype, 												--------operations is h type
 htype_op, 													--------operation of h type
-DecEx_src_val,  											--------source value
-DecEx_dst_val,											--------destination value
+fwd_data1,  											--------source value
+fwd_data2,											--------destination value
 DecEx_sh_amount, 										--------shift amount
 alu_result, flags_result);
 
