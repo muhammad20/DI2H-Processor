@@ -60,7 +60,7 @@ signal mem_read, mem_write: std_logic;
 begin
 mem_write <= exMemBuffDataOut(129);
 mem_read <= fetch_enable or exMemBuffDataOut(130);
-fetch_dec_buffRst <= reset;
+fetch_dec_buffRst <= '0';
 fetch_dec_buffEn <= '1';
 dec_ex_buffRst <= reset;
 dec_ex_buffEn <= '1';
@@ -136,7 +136,7 @@ fetchedInstruction);
 --JMP_RESULT should come from the buffer 
 
 fetchDecBuffDataIn <= inport&fetchedInstruction;
-fetchDecodeBuff: entity work.nbit_register generic map(48) port map(fetchDecBuffDataIn, buffsClk, reset, '1', fetchDecBuffDataOut);
+fetchDecodeBuff: entity work.nbit_register generic map(48) port map(fetchDecBuffDataIn, buffsClk, '0', '1', fetchDecBuffDataOut);
 bufferedInstruction <= fetchDecBuffDataOut(31 downto 0);
 ------------------------------------------------------------------- decode stage ---------------------------------------------------------
 --------------------------------------------- control unit
@@ -271,10 +271,10 @@ exMemBuffDataOut(165 downto 150),					----EtoM_src_val
 exMemBuffDataOut(149 downto 134),					----EtoM_dst_val
 exMemBuffDataOut(124 downto 122),					----EtoM_src_addr
 exMemBuffDataOut(105 downto 103),					----EtoM_dst_addr
-MemWBBuffDataOut(35 downto 20),				----MtoWB_src_val
-MemWBBuffDataOut(16 downto 1),				----MtoWb_dst_val
-MemWBBuffDataOut(38 downto 36),				----MtoWb_src_addr
+MemWBBuffDataOut(71 downto 56),				----MtoWB_src_val
+MemWBBuffDataOut(55 downto 40),				----MtoWb_dst_val
 MemWBBuffDataOut(19 downto 17),				----MtoWb_src_addr
+MemWBBuffDataOut(38 downto 36),				----MtoWb_src_addr
 decExBuffDataOut(15 downto 0),					----DtoEx_src_val
 decExBuffDataOut(34 downto 19),					----DtoEx_dst_val
 decExBuffDataOut(18 downto 16),					----DtoEx_src_addr

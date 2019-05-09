@@ -36,7 +36,7 @@ opcodeout<=opcode;
 x<= (not(opcode(3)) and opcode(0) and not(opcode(4)) and (opcode(2) xnor opcode(1)));
 MemRd <= x or (not(opcode(4)) and opcode(3) and opcode(2) and opcode(1));
 y<= (opcode(3) xnor opcode(2)) or (opcode(2) and (not opcode(3)));
-MemWr <= y and not( opcode(4) or opcode(1) or opcode(0));
+MemWr <= '1' when opcode = "00000" or opcode = "00100" or opcode = "01100" else '0';
 
 MemtoReg <= x;
 ALU_En <= opcode(4) and not(opcode(4)and opcode(3) and opcode(1) and opcode(0) and not(opcode(2)));
