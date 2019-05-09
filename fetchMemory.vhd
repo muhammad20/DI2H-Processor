@@ -108,6 +108,13 @@ exMemBuffDataIn(14) <= decExBuffDataOut(129);
 exMemBuffDataIn(13 downto 9)<= decExBuffDataOut(124 downto 120); --opcode
 exMemBuffDataIn(8 downto 0) <= (others => '0');
 
+
+
+sp_add1 <= '1' when decExBuffDataOut(124 downto 120) = "00001" else '0';
+sp_add2 <= '1' when decExBuffDataOut(124 downto 120) = "01110" or "01111" else '0';
+sp_sub1 <= '1' when decExBuffDataOut(124 downto 120) = "00000" else '0'; 
+sp_sub2 <= '1' when decExBuffDataOut(124 downto 120) = "01100" else '0';
+
 --exMemBuffDataOut(116) = write back enable
 
 ---- Memory to write back buffer
@@ -243,7 +250,9 @@ databus_wen <= fetch_enable or mem_write or mem_read;
 -- fromMemory <= X"0000"&exMembuffDataOut(102 downto 87) when mem_write = '1' else fetchedInstruction;
 
 -- EA vs Fetch address.
-ramAddress <= fromFetch(19 downto 0) when fetch_enable = '1' else exMemBuffDataOut(34 downto 15);
+ramAddress <= fromFetch(19 downto 0) when fetch_enable = '1' 
+else sp_value(19 downto 0) when (sp_add1 = '1' or sp_add2 = '1' or sp_sub1 = '1' or sp_sub2 = '1') 
+else exMemBuffDataOut(34 downto 15);
 
 ------------------------memory unit
 memory: entity work.memory_unit 
