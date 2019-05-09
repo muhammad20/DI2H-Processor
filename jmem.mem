@@ -1,0 +1,19 @@
+// memory data file (do not edit the following line - required for mem load use
+// instance=/fetchmemoryunit/memory/r0/s_ram
+// format=mti addressradix=h dataradix=h version=1.0 wordsperline=1
+0: 2A00
+1: E100
+2: 4900
+3: E900
+4: D800
+5: 4A00
+6: D800
+7: D800
+8: D800
+9: D800
+A: D800
+B: D800
+C: D800
+D: D800
+E: D800
+F: D800
