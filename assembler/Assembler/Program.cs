@@ -17,8 +17,8 @@ namespace Assembler
 
             if(args.Length == 0)
             {            
-                filename = Path.Combine(Environment.CurrentDirectory, "test-cases\\Branch.asm");
-                outputFilename = Path.Combine(Environment.CurrentDirectory, "output\\Branch.hex");
+                filename = Path.Combine(Environment.CurrentDirectory, "test-cases\\test_forward.asm");
+                outputFilename = Path.Combine(Environment.CurrentDirectory, "output\\output1.mem");
             } else 
             {
                 filename = Path.Combine(Environment.CurrentDirectory, $"test-cases\\{args[0]}");
@@ -78,6 +78,13 @@ namespace Assembler
                     }
                     // Convert this to our memory code.
                     var machineCode = converter.AssemblyConvert(assemblyInstruction, true);
+                    if(machineCode.Contains('\n'))
+                    {
+                        writer.WriteLine($"{i.ToString("X")}: {machineCode.Substring(0,machineCode.IndexOf('\n')).PadLeft(4, '0')}");
+                        writer.WriteLine($"{(i+1).ToString("X")}: {machineCode.Substring(machineCode.IndexOf('\n') + 1).PadLeft(4, '0')}");
+                        i+=2;    
+                        continue;
+                    }
                     writer.WriteLine($"{i.ToString("X")}: {machineCode.PadLeft(4, '0')}");
                     i++;
                 }
@@ -262,6 +269,10 @@ namespace Assembler
                 string firstMemoryLocation = machineCode.Substring(0, 16);
                 string secondMemoryLocation = machineCode.Substring(15, 16);
                 machineCode = firstMemoryLocation + "\n" + secondMemoryLocation;
+                char[] array = firstMemoryLocation.ToCharArray();
+                array[15] = '1';
+                firstMemoryLocation = new string(array);
+                return hex? Convert.ToInt64(firstMemoryLocation, 2).ToString("X")  + "\n" + Convert.ToInt64(secondMemoryLocation, 2).ToString("X") : machineCode; 
             }
 
             char[] arr = machineCode.ToCharArray();
