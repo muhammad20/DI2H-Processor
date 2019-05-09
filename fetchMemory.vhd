@@ -60,6 +60,8 @@ signal mem_read, mem_write, databus_wen: std_logic;
 Signal ramAddress : std_logic_vector(19 downto 0);
 Signal memWriteValue, mem_valueInput : std_logic_vector(15 downto 0);
 
+Signal loadUseStall : std_logic;
+
 begin
 mem_write <= exMemBuffDataOut(129);
 mem_read <= fetch_enable or exMemBuffDataOut(130);
@@ -139,7 +141,7 @@ fetchedInstruction);
 --JMP_RESULT should come from the buffer 
 
 fetchDecBuffDataIn <= inport&fetchedInstruction;
-fetchDecodeBuff: entity work.nbit_register generic map(48) port map(fetchDecBuffDataIn, buffsClk, '0', '1', fetchDecBuffDataOut);
+fetchDecodeBuff: entity work.nbit_register generic map(48) port map(fetchDecBuffDataIn, buffsClk, '0', loadUseStall, fetchDecBuffDataOut);
 bufferedInstruction <= fetchDecBuffDataOut(31 downto 0);
 ------------------------------------------------------------------- decode stage ---------------------------------------------------------
 --------------------------------------------- control unit
@@ -179,7 +181,7 @@ regFileOutData1, regFileOutData2);			----------register output data
 
 decExBuffDataIn(151 downto 136) <= fetchDecBuffDataOut(47 downto 32);
 decExBuffDatain(152) <= out_type;
-decodeExecuteBuff: entity work.nbit_register generic map(153) port map(decExBuffDataIn, buffsClk, reset,'1', decExBuffDataOut);
+decodeExecuteBuff: entity work.nbit_register generic map(153) port map(decExBuffDataIn, buffsClk, reset, loadUseStall, decExBuffDataOut);
 
 -- Set the output port.
 outport <= fwd_data2 when decExBuffDataOut(152) = '1'
@@ -216,7 +218,7 @@ DecEx_sh_amount, 										--------shift amount
 alu_result, flags_result);
 
 exMemBuffDataIn (182 downto 167) <= decExBuffDataOut(151 downto 136);
-executeMemoryBuff: entity work.nbit_register generic map(183) port map(exMemBuffDataIn, buffsClk, reset,'1', exMemBuffDataOut);
+executeMemoryBuff: entity work.nbit_register generic map(183) port map(exMemBuffDataIn, buffsClk, reset, '1' , exMemBuffDataOut);
 
 -------------------------------------------------------- Memory Stage -------------------------------------------------------------
 -- tristateBuffer: entity work.tristate port map(fromMemory, dataBus, databus_wen);
@@ -251,6 +253,8 @@ regInData <= MemWBBuffDataOut(55 downto 40) when MemWBBuffDataOut(112) = '1'
 
 
 ---------------------------------------------------------------------------Hazard Detection Unit ----------------------------------------------------------
+loadUseStall <= not(exMemBuffDataout(127) and  exMemBuffDataOut(130) );
+
 hdu: entity work.Hazard_detection_unit port map(
 	exMemBuffDataOut(129),						----Ex_M_memwrite
 	exMemBuffDataOut(130),						----Ex_M_memread
@@ -281,7 +285,7 @@ exMemBuffDataOut(149 downto 134),					----EtoM_dst_val
 exMemBuffDataOut(124 downto 122),					----EtoM_src_addr
 exMemBuffDataOut(105 downto 103),					----EtoM_dst_addr
 MemWBBuffDataOut(71 downto 56),				----MtoWB_src_val
-MemWBBuffDataOut(55 downto 40),				----MtoWb_dst_val
+MemWBBuffDataOut(128 downto 113),				----MtoWb_dst_val
 MemWBBuffDataOut(19 downto 17),				----MtoWb_src_addr
 MemWBBuffDataOut(38 downto 36),				----MtoWb_src_addr
 decExBuffDataOut(15 downto 0),					----DtoEx_src_val
