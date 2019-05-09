@@ -59,10 +59,14 @@ signal mem_read, mem_write, databus_wen: std_logic;
 Signal ramAddress : std_logic_vector(19 downto 0);
 Signal memWriteValue, mem_valueInput : std_logic_vector(15 downto 0);
 signal yarabb: std_logic_vector(31 downto 0);
-Signal loadUseStall : std_logic;
+Signal loadUseStall, buff_en, regAddressEqual, regAddressEqual2 : std_logic;
 Signal jmp_result : std_logic_vector(1 downto 0);
 
 Signal branch, buffer_reset : std_logic;
+
+Signal executeMemoryJmpEnableIn, executeMemoryJmpEnableOut : std_logic_vector(1 downto 0);
+
+Signal currentWB, currentMemRead : std_logic;
 
 begin
 mem_write <= exMemBuffDataOut(129);
@@ -159,21 +163,22 @@ fetchedInstruction);
 --JMP_RESULT should come from the buffer 
 
 fetchDecBuffDataIn <= inport&fetchedInstruction;
-fetchDecodeBuff: entity work.nbit_register generic map(48) port map(fetchDecBuffDataIn, buffsClk, '0', loadUseStall, fetchDecBuffDataOut);
+fetchDecodeBuff: entity work.nbit_register generic map(48) port map(fetchDecBuffDataIn, buffsClk, '0', buff_en, fetchDecBuffDataOut);
 bufferedInstruction <= fetchDecBuffDataOut(31 downto 0);
 ------------------------------------------------------------------- decode stage ---------------------------------------------------------
 --------------------------------------------- control unit
 controlUnit: entity work.Control_Unit port map(
+clock,
 bufferedInstruction(15 downto 11),     		                                ----------in opcode
 INT,
 decExBuffDataIn(124 downto 120), 			                        ----------out opcode
 decExBuffDataIn(114), 								----------alu src
-decExBuffDataIn(116),								----------write back enable
+currentWB,								----------write back enable
 decExBuffDataIn(115),								----------alu enable
 decExBuffDataIn(113), 								----------jmp enable
 decExBuffDataIn(117),								----------memtoReg
 decExBuffDataIn(118),								----------memWrite
-decExBuffDataIn(119),								----------memRead
+currentMemRead,								----------memRead
 push_sig,									----------push signal
 pop_sig, 									----------pop signal
 decExBuffDataIn(132),								----------setc
@@ -184,6 +189,9 @@ decExBuffDataIn(131),								----------dec
 decExBuffDataIn(129),								----------multiply signal
 decExBuffDataIn(135),								----------h_type
 out_type);
+
+decExBuffDataIn(116) <= currentWB;
+decExBuffDataIn(119) <= currentMemRead;
 ---------------------------------------------------------------- register file
 MemWB_wb <= MemWBBuffDataOut(39);
 MemWB_write_addr <= MemWBBuffDataOut(38 downto 36);
@@ -200,13 +208,14 @@ regFileOutData1, regFileOutData2);			----------register output data
 
 decExBuffDataIn(151 downto 136) <= fetchDecBuffDataOut(47 downto 32);
 decExBuffDatain(152) <= out_type;
-decodeExecuteBuff: entity work.nbit_register generic map(157) port map(decExBuffDataIn, buffsClk, buffer_reset, loadUseStall, decExBuffDataOut);
+
+decodeExecuteBuff: entity work.nbit_register generic map(155) port map(decExBuffDataIn, buffsClk, buffer_reset, buff_en, decExBuffDataOut);
 
 -- Set the output port.
 outport <= fwd_data2 when decExBuffDataOut(152) = '1'
 		else (others => 'Z');
 
-jmp_enable <= decExBuffDataOut(113);
+jmp_enable <=  decExBuffDataIn(113);
 
 --------------------------------------------------------- Execute Stage ------------------------------------------------------------------
 decExBuffDataIn(154 downto 153) <= jmp_result;
@@ -222,11 +231,17 @@ DecEx_src_val <= decExBuffDataOut(15 downto 0);
 DecEx_dst_val <= decExBuffDataOut(34 downto 19);
 DecEx_sh_amount <= decExBuffDataOut(128 downto 125);
 
-branch <= '1' when jmp_enable = '1' and jmp_result = "00"
-		else '1' when jmp_enable = '1' and jmp_result = "01" and flags_result(2) = '1'
-		else '1' when jmp_enable = '1' and jmp_result = "10" and flags_result(1) = '1'
-		else '1' when jmp_enable = '1' and jmp_result = "11" and flags_result(0) = '1'
+branch <= '1' when  executeMemoryJmpEnableOut(0) = '1' and decExBuffDataOut(154 downto 153) = "00"
+		else '1' when  executeMemoryJmpEnableOut(0) = '1' and decExBuffDataOut(154 downto 153) = "01" and flags_result(2) = '1'
+		else '1' when  executeMemoryJmpEnableOut(0) = '1' and decExBuffDataOut(154 downto 153) = "10" and flags_result(1) = '1'
+		else '1' when  executeMemoryJmpEnableOut(0) = '1' and decExBuffDataOut(154 downto 153) = "11" and flags_result(0) = '1'
 		else '0';
+
+
+executeMemoryJmpEnableIn(0) <= jmp_enable;
+executeMemoryJmpEnableIn(1) <= '0';
+--- JMP ENABLE BUFFER
+jmp_enable_buffer :  entity work.nbit_register generic map(2) port map(executeMemoryJmpEnableIn, buffsClk, '0', buff_en, executeMemoryJmpEnableOut);
 
 ------------------------------  ALU
 ALU: entity work.ArithmeticLogicUnit port map(
@@ -287,7 +302,14 @@ regInData <= MemWBBuffDataOut(55 downto 40) when MemWBBuffDataOut(112) = '1'
 
 
 ---------------------------------------------------------------------------Hazard Detection Unit ----------------------------------------------------------
-loadUseStall <= not(exMemBuffDataout(127) and  exMemBuffDataOut(130) );
+-- loadUseStall <= '1' when MemWBBuffDataIn(39) = '1' 
+-- 			and mem_read = '1' 
+-- 			and (regAddressEqual = '1' or regAddressEqual2 = '1')
+-- 			else '0';
+
+loadUseStall <= '1' when currentMemRead = '1' and currentWB = '1' and (readAddress1 = decExBuffDataOut(37 downto 35) or readAddress2 = decExBuffDataOut(37 downto 35)) else '0';
+
+buff_en <= not loadUseStall;
 
 hdu: entity work.Hazard_detection_unit port map(
 	exMemBuffDataOut(129),						----Ex_M_memwrite
@@ -321,8 +343,8 @@ exMemBuffDataOut(165 downto 150),					----EtoM_src_val
 exMemBuffDataOut(149 downto 134),					----EtoM_dst_val
 exMemBuffDataOut(124 downto 122),					----EtoM_src_addr
 exMemBuffDataOut(105 downto 103),					----EtoM_dst_addr
-yarabb(31 downto 16),				----MtoWB_src_val
-yarabb(15 downto 0),				----MtoWb_dst_val
+MemWBBuffDataIn(71 downto 56),				----MtoWB_src_val
+regInData,				----MtoWb_dst_val
 MemWBBuffDataOut(19 downto 17),				----MtoWb_src_addr
 MemWBBuffDataOut(38 downto 36),				----MtoWb_src_addr
 decExBuffDataOut(15 downto 0),					----DtoEx_src_val

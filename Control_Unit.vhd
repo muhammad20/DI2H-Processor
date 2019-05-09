@@ -5,6 +5,7 @@ use ieee.numeric_std.all;
 entity Control_Unit is 
 
 port(
+clock : in std_logic;
 opcode: in std_logic_vector (4 downto 0);
 INT: std_logic;
 opcodeout: out std_logic_vector (4 downto 0);
@@ -22,8 +23,16 @@ port(in1,in2,in3,in4: in std_logic;
 
 end component;
 signal in1,in2,in3,in4,x,y,wb1: std_logic;
+Signal jmp_en : std_logic;
 begin
 
+
+process(clock) 
+begin
+	if(rising_edge(clock)) then
+		Jmp <= jmp_en;
+	end if;
+end process;
 setc <= '1' when opcode = "11001" else '0';
 clrc <= '1' when opcode = "11010" else '0';
 not_op <= '1' when opcode = "11000" else '0';
