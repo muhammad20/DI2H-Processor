@@ -38,9 +38,9 @@ signal sp_value: std_logic_vector(31 downto 0);
 signal  bufferedInstruction: std_logic_vector(31 downto 0);
 Signal inFetchDecodeBuffer : std_logic_vector(15 downto 0);
 signal fetchDecBuffDataIn, fetchDecBuffDataOut: std_logic_vector(47 downto 0);
-signal decExBuffDataIn, decExBuffDataOut: std_logic_vector(154 downto 0);
-signal exMemBuffDataIn, exMemBuffDataOut: std_logic_vector(182 downto 0);
-signal MemWBBuffDataIn, MemWBBuffDataOut: std_logic_vector(128 downto 0);
+signal decExBuffDataIn, decExBuffDataOut: std_logic_vector(156 downto 0);
+signal exMemBuffDataIn, exMemBuffDataOut: std_logic_vector(184 downto 0);
+signal MemWBBuffDataIn, MemWBBuffDataOut: std_logic_vector(134 downto 0);
 
 --------------- buffers reset signals and enables
 signal fetch_dec_buffRst, fetch_dec_buffEn, dec_ex_buffRst, dec_ex_buffEn, buffsClk: std_logic;
@@ -86,6 +86,8 @@ writeAddress <= bufferedInstruction(10 downto 8); ---destination is the first oe
 
  
 ---- Decode to Execute data buffer
+decExBuffDataIn(156) <= pop_sig;
+decExBuffDataIn(155) <= push_sig;
 decExBuffDataIn(128 downto 125) <= bufferedInstruction(4 downto 1);
 decExBuffDataIn(112 downto 110)  <= jmp_type & ret_rti;
 decExBuffDataIn(109 downto 90) <= dec_ex_effective_address;
@@ -95,6 +97,8 @@ decExBuffDataIn(37 downto 19) <= readAddress1 & regFileOutData1; --- DST address
 decExBuffDataIn(18 downto 0) <= readAddress2 & regFileOutData2; --- SRC address and value
 
 ---- Execute to Memory Data Buffer
+exMemBuffDataIn(184) <= decExBuffDataOut(156);  ---pop sig
+exMemBuffDataIn(183) <= decExBuffDataOut(155);  --- push sig
 exMemBuffDataIn(166) <= decExBuffDataOut(129);			----- decode to execute mul signal
 exMemBuffDataIn(165 downto 134)<= X"0000" & decExBuffDataOut(109 downto 94) when decExBuffDataOut(124 downto 120) = "00011" else alu_result;
 exMemBuffDataIn(133 downto 131) <= flags_result;
@@ -110,14 +114,17 @@ exMemBuffDataIn(8 downto 0) <= (others => '0');
 
 
 
-sp_add1 <= '1' when decExBuffDataOut(124 downto 120) = "00001" else '0';
-sp_add2 <= '1' when decExBuffDataOut(124 downto 120) = "01110" or "01111" else '0';
-sp_sub1 <= '1' when decExBuffDataOut(124 downto 120) = "00000" else '0'; 
-sp_sub2 <= '1' when decExBuffDataOut(124 downto 120) = "01100" else '0';
+sp_add1 <= '1' when exMemBuffDataOut(13 downto 9) = "00001" and exMemBuffDataOut(184) = '1' else '0';
+sp_add2 <= '1' when (exMemBuffDataOut(13 downto 9) = "01110" or exMemBuffDataOut(13 downto 9) = "01111") and exMemBuffDataOut(184) = '1' else '0';
+sp_sub1 <= '1' when exMemBuffDataOut(13 downto 9) = "00000" and exMemBuffDataOut(183) = '1' else '0'; 
+sp_sub2 <= '1' when exMemBuffDataOut(13 downto 9) = "01100" and exMemBuffDataIn(183) = '1' else '0';
 
 --exMemBuffDataOut(116) = write back enable
 
 ---- Memory to write back buffer
+MemWBBuffDataIn(131) <= sp_add1;
+MemWBBuffDataIn(130) <= sp_sub1; 
+MemWBBuffDataIn(129) <= exMemBuffDataIn(183);
 MemWBBuffDataIn(128 downto 113) <= fromMemory(31 downto 16);
 MemWBBuffDataIn(112 downto 108) <= exMemBuffDataOut(13 downto 9); -----opcode
 MemWBBuffDataIn(107 downto 92) <= exMemBuffDataOut(182 downto 167);
@@ -158,6 +165,7 @@ bufferedInstruction <= fetchDecBuffDataOut(31 downto 0);
 --------------------------------------------- control unit
 controlUnit: entity work.Control_Unit port map(
 bufferedInstruction(15 downto 11),     		                                ----------in opcode
+INT,
 decExBuffDataIn(124 downto 120), 			                        ----------out opcode
 decExBuffDataIn(114), 								----------alu src
 decExBuffDataIn(116),								----------write back enable
@@ -192,7 +200,7 @@ regFileOutData1, regFileOutData2);			----------register output data
 
 decExBuffDataIn(151 downto 136) <= fetchDecBuffDataOut(47 downto 32);
 decExBuffDatain(152) <= out_type;
-decodeExecuteBuff: entity work.nbit_register generic map(155) port map(decExBuffDataIn, buffsClk, buffer_reset, loadUseStall, decExBuffDataOut);
+decodeExecuteBuff: entity work.nbit_register generic map(157) port map(decExBuffDataIn, buffsClk, buffer_reset, loadUseStall, decExBuffDataOut);
 
 -- Set the output port.
 outport <= fwd_data2 when decExBuffDataOut(152) = '1'
@@ -237,7 +245,7 @@ DecEx_sh_amount, 										--------shift amount
 alu_result, flags_result);
 
 exMemBuffDataIn (182 downto 167) <= decExBuffDataOut(151 downto 136);
-executeMemoryBuff: entity work.nbit_register generic map(183) port map(exMemBuffDataIn, buffsClk, reset, '1' , exMemBuffDataOut);
+executeMemoryBuff: entity work.nbit_register generic map(185) port map(exMemBuffDataIn, buffsClk, reset, '1' , exMemBuffDataOut);
 jmp_result <= "00" when (bufferedInstruction(15 downto 11) = "01101")
 			else "01" when (bufferedInstruction(15 downto 11) = "01001")
 			else "10" when (bufferedInstruction(15 downto 11) = "01010")
@@ -250,9 +258,9 @@ databus_wen <= fetch_enable or mem_write or mem_read;
 -- fromMemory <= X"0000"&exMembuffDataOut(102 downto 87) when mem_write = '1' else fetchedInstruction;
 
 -- EA vs Fetch address.
-ramAddress <= fromFetch(19 downto 0) when fetch_enable = '1' 
-else sp_value(19 downto 0) when (sp_add1 = '1' or sp_add2 = '1' or sp_sub1 = '1' or sp_sub2 = '1') 
-else exMemBuffDataOut(34 downto 15);
+ramAddress <= sp_value(19 downto 0) when ((sp_add1 = '1' or sp_add2 = '1' or sp_sub1 = '1' or sp_sub2 = '1'))
+else fromFetch(19 downto 0) when fetch_enable = '1' 
+else exMemBuffDataOut(34 downto 15) when exMemBuffDataOut(13 downto 9) = "00100" or exMemBuffDataOut(13 downto 9) = "00111";
 
 ------------------------memory unit
 memory: entity work.memory_unit 
@@ -269,7 +277,7 @@ mem_write,
 mem_read);
 
 ---------------------------------------------------- Write back stage --------------------------------------------------------------
-MemoryWritebackBuff: entity work.nbit_register generic map(129) port map(MemWBBuffDataIn, buffsClk, reset,'1', MemWBBuffDataOut);
+MemoryWritebackBuff: entity work.nbit_register generic map(135) port map(MemWBBuffDataIn, buffsClk, reset,'1', MemWBBuffDataOut);
 
 
 regInData <= MemWBBuffDataOut(55 downto 40) when MemWBBuffDataOut(112) = '1'
@@ -334,7 +342,7 @@ stack_pointer: entity work.StackPointer port map(
 clock,
 sp_add1,
 sp_add2,
-sp_sub1,
+MemWBBuffDataOut(130),
 sp_sub2,
 reset,
 sp_value

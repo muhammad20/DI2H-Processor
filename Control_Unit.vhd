@@ -6,6 +6,7 @@ entity Control_Unit is
 
 port(
 opcode: in std_logic_vector (4 downto 0);
+INT: std_logic;
 opcodeout: out std_logic_vector (4 downto 0);
 ALU_Src,WB_En,ALU_En,Jmp,MemtoReg,MemWr,MemRd,Push_Sig,Pop_Sig, 
 setc, clrc, not_op, inc, dec, multiply, h_type,type_out: out std_logic);
@@ -42,7 +43,7 @@ MemtoReg <= x;
 ALU_En <= opcode(4) and not(opcode(4)and opcode(3) and opcode(1) and opcode(0) and not(opcode(2)));
 --ALU_Src<=in1;
 Jmp <= (opcode(3)and(not(opcode(4))));
-Push_Sig <=(not(opcode(4)or opcode(3) or opcode(2) or opcode(1) or opcode(0)));
+Push_Sig <= '1' when opcode = "00000" or opcode = "01100" or INT = '1' else '0';
 Pop_Sig <=(not(opcode(4)or opcode(3) or opcode(2) or opcode(1) or not(opcode(0))));
 
 in1<= (not(opcode(1)))and( (opcode(2)and(not(opcode(0))))or((opcode(2) xnor opcode(0))));
