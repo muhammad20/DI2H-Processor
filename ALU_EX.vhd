@@ -45,7 +45,7 @@ process(clock, reset) begin
 		if (shift_amount = "0000") then
 			shiftRightCarry<='0';
 		else 
-			shiftRightCarry<= destination(to_integer(unsigned(shift_amount))-1);
+			shiftRightCarry<= '1';
 		end if;
 	end if;
  end process;
@@ -56,16 +56,16 @@ one <= X"00000001";
 destination<="0000000000000000"&dest;
 source <="0000000000000000"&src;
 
-inc_val <= std_logic_vector(to_unsigned(to_integer(unsigned(destination) + unsigned(one)),32));
-dec_val <= std_logic_vector(to_unsigned(to_integer(unsigned(destination) - unsigned(one)),32));
+inc_val <= std_logic_vector(((unsigned(destination) + unsigned(one))));
+dec_val <= std_logic_vector(((unsigned(destination) - unsigned(one))));
 not_val <= not destination;
 
-mov <= destination;
-add <= std_logic_vector(to_unsigned(to_integer(unsigned(source)+unsigned(destination)),32));
-sub <= std_logic_vector(to_unsigned(to_integer(unsigned(destination)-unsigned(source)),32));
+mov <= source;
+add <= std_logic_vector(((unsigned(source)+unsigned(destination))));
+sub <= std_logic_vector(((unsigned(destination)-unsigned(source))));
 mul <= std_logic_vector(to_unsigned(to_integer(unsigned(source)*unsigned(destination)),32));
-andd <= std_logic_vector(to_unsigned(to_integer(unsigned(source) and unsigned(destination)),32));
-orr <= std_logic_vector(to_unsigned(to_integer(unsigned(source) or unsigned(destination)),32));
+andd <= std_logic_vector(((unsigned(source) and unsigned(destination))));
+orr <= std_logic_vector(((unsigned(source) or unsigned(destination))));
 
 
 --shiftRightCarry <= '0' when shift_amount = "0000" else
@@ -85,8 +85,7 @@ sense_output: entity work.mux2x1 generic map(32) port map(zero_val, result, alu_
 
 
 flags(2) <= '1' when (oup(15 downto 0) = x"0000") or (operation ="011" and oup = x"00000000") else '0';
-flags(1) <= '1' when (to_integer(unsigned(source))>to_integer(unsigned(destination)) and result(16) = '1') or
-	(to_integer(unsigned(result(15 downto 0)))<0 ) else '0';
+flags(1) <= '1' when (oup(16)='1') else '0';
 
 --flags <= zero & negative & carry;
 

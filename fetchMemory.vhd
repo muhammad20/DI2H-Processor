@@ -6,7 +6,6 @@ use ieee.numeric_std.all;
 Entity FetchMemoryUnit is 
 port(
 	clock, reset, INT: in std_logic;
-	new_pc: in std_logic_vector(31 downto 0);
 	inport : in std_logic_vector(15 downto 0);
 	outport : out std_logic_vector(15 downto 0);
 	memory1_location : in std_logic_vector(31 downto 0); -- instruction in memory[1] location
@@ -24,7 +23,7 @@ signal fetchedInstruction: std_logic_vector(31 downto 0);
 signal readAddress1, readAddress2, writeAddress: std_logic_vector(2 downto 0);
 signal regInData: std_logic_vector(15 downto 0);
 signal pc_change_enable, stall_mul,stall_rti,stall_ret,stall_INT,stall_ld,out_type: std_logic;
-
+Signal new_pc : std_logic_vector(31 downto 0);
 
 signal push_sig, pop_sig, ret_rti, jmp_enable, fetch_enable: std_logic;
 signal jmp_type: std_logic_vector(1 downto 0);
@@ -39,7 +38,7 @@ signal sp_value: std_logic_vector(31 downto 0);
 signal  bufferedInstruction: std_logic_vector(31 downto 0);
 Signal inFetchDecodeBuffer : std_logic_vector(15 downto 0);
 signal fetchDecBuffDataIn, fetchDecBuffDataOut: std_logic_vector(47 downto 0);
-signal decExBuffDataIn, decExBuffDataOut: std_logic_vector(152 downto 0);
+signal decExBuffDataIn, decExBuffDataOut: std_logic_vector(154 downto 0);
 signal exMemBuffDataIn, exMemBuffDataOut: std_logic_vector(182 downto 0);
 signal MemWBBuffDataIn, MemWBBuffDataOut: std_logic_vector(128 downto 0);
 
@@ -59,8 +58,11 @@ signal mem_read, mem_write, databus_wen: std_logic;
 
 Signal ramAddress : std_logic_vector(19 downto 0);
 Signal memWriteValue, mem_valueInput : std_logic_vector(15 downto 0);
-
+signal yarabb: std_logic_vector(31 downto 0);
 Signal loadUseStall : std_logic;
+Signal jmp_result : std_logic_vector(1 downto 0);
+
+Signal branch, buffer_reset : std_logic;
 
 begin
 mem_write <= exMemBuffDataOut(129);
@@ -69,8 +71,10 @@ fetch_dec_buffRst <= '0';
 fetch_dec_buffEn <= '1';
 dec_ex_buffRst <= reset;
 dec_ex_buffEn <= '1';
-jmp_enable <= '0';
 buffsClk <= not clock;
+buffer_reset <= reset or branch;
+new_pc <= X"0000"&fwd_data2;
+
 
 dec_ex_effective_address(19 downto 13)<= bufferedInstruction(7 downto 1);
 dec_ex_effective_address(12 downto 0) <= bufferedInstruction(31 downto 19); 
@@ -130,7 +134,7 @@ fetch_enable,
 reset,
 pc_change_enable,									-----------pc change enable		
 INT, 											-----------INT
-jmp_enable,
+branch,
 mem_zero,
 mem_one,
 fromMemory(31 downto 16),
@@ -181,14 +185,16 @@ regFileOutData1, regFileOutData2);			----------register output data
 
 decExBuffDataIn(151 downto 136) <= fetchDecBuffDataOut(47 downto 32);
 decExBuffDatain(152) <= out_type;
-decodeExecuteBuff: entity work.nbit_register generic map(153) port map(decExBuffDataIn, buffsClk, reset, loadUseStall, decExBuffDataOut);
+decodeExecuteBuff: entity work.nbit_register generic map(155) port map(decExBuffDataIn, buffsClk, buffer_reset, loadUseStall, decExBuffDataOut);
 
 -- Set the output port.
 outport <= fwd_data2 when decExBuffDataOut(152) = '1'
 		else (others => 'Z');
 
---------------------------------------------------------- Execute Stage ------------------------------------------------------------------
+jmp_enable <= decExBuffDataOut(113);
 
+--------------------------------------------------------- Execute Stage ------------------------------------------------------------------
+decExBuffDataIn(154 downto 153) <= jmp_result;
 DecEx_setc <= decExBuffDataOut(132);
 DecEx_clrc <= decExBuffDataOut(133);
 DecEx_inc <= decExBuffDataOut(130);
@@ -200,6 +206,12 @@ htype_op <= decExBuffDataOut(122 downto 120);
 DecEx_src_val <= decExBuffDataOut(15 downto 0);
 DecEx_dst_val <= decExBuffDataOut(34 downto 19);
 DecEx_sh_amount <= decExBuffDataOut(128 downto 125);
+
+branch <= '1' when jmp_enable = '1' and jmp_result = "00"
+		else '1' when jmp_enable = '1' and jmp_result = "01" and flags_result(2) = '1'
+		else '1' when jmp_enable = '1' and jmp_result = "10" and flags_result(1) = '1'
+		else '1' when jmp_enable = '1' and jmp_result = "11" and flags_result(0) = '1'
+		else '0';
 
 ------------------------------  ALU
 ALU: entity work.ArithmeticLogicUnit port map(
@@ -219,6 +231,11 @@ alu_result, flags_result);
 
 exMemBuffDataIn (182 downto 167) <= decExBuffDataOut(151 downto 136);
 executeMemoryBuff: entity work.nbit_register generic map(183) port map(exMemBuffDataIn, buffsClk, reset, '1' , exMemBuffDataOut);
+jmp_result <= "00" when (bufferedInstruction(15 downto 11) = "01101")
+			else "01" when (bufferedInstruction(15 downto 11) = "01001")
+			else "10" when (bufferedInstruction(15 downto 11) = "01010")
+			else "11" when (bufferedInstruction(15 downto 11) = "01011")
+			else "00";
 
 -------------------------------------------------------- Memory Stage -------------------------------------------------------------
 -- tristateBuffer: entity work.tristate port map(fromMemory, dataBus, databus_wen);
@@ -279,13 +296,16 @@ hdu: entity work.Hazard_detection_unit port map(
 );
 
 ----------------------------------------------------- Forwarding Unit -----------------------------------------------------------------------------
+yarabb <= MemWBBuffDataOut(128 downto 113) & MemWBBuffDataOut(71 downto 56) when exMemBuffDataOut(130) = '1'
+		else exMemBuffDataOut(165 downto 134);
+
 fu: entity work.Fwd_unit port map (
 exMemBuffDataOut(165 downto 150),					----EtoM_src_val
 exMemBuffDataOut(149 downto 134),					----EtoM_dst_val
 exMemBuffDataOut(124 downto 122),					----EtoM_src_addr
 exMemBuffDataOut(105 downto 103),					----EtoM_dst_addr
-MemWBBuffDataOut(71 downto 56),				----MtoWB_src_val
-MemWBBuffDataOut(128 downto 113),				----MtoWb_dst_val
+yarabb(31 downto 16),				----MtoWB_src_val
+yarabb(15 downto 0),				----MtoWb_dst_val
 MemWBBuffDataOut(19 downto 17),				----MtoWb_src_addr
 MemWBBuffDataOut(38 downto 36),				----MtoWb_src_addr
 decExBuffDataOut(15 downto 0),					----DtoEx_src_val

@@ -4,6 +4,21 @@ force -freeze sim:/fetchmemoryunit/reset 1 0
 force -freeze sim:/fetchmemoryunit/INT 0 0
 run
 force -freeze sim:/fetchmemoryunit/reset 0 0
+force -freeze sim:/fetchmemoryunit/inport 16'h0005 0
+run
+force -freeze sim:/fetchmemoryunit/inport 16'h19 0
+run
+force -freeze sim:/fetchmemoryunit/inport 16'hFFFF 0
+run
+force -freeze sim:/fetchmemoryunit/inport 16'hF320 0
+run
+run
+run
+run
+run
+run
+run
+run
 run
 run
 run
