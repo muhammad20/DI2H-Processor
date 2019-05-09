@@ -110,3 +110,14 @@ mem load -filltype value -filldata 8A20 -fillradix hexadecimal /fetchmemoryunit/
 run
 force -freeze sim:/fetchmemoryunit/reset 0 0
 run
+
+
+//JType
+mem load -i /home/hamada/Desktop/CCE-C/Senior-1/Spring19/CMPN301/Project/DI2H-Processor/jmem.mem /fetchmemoryunit/memory/r0/s_ram
+force -freeze sim:/fetchmemoryunit/clock 1 0, 0 {50 ps} -r 100
+force -freeze sim:/fetchmemoryunit/reset 1 0
+force -freeze sim:/fetchmemoryunit/INT 0 0
+force -freeze sim:/fetchmemoryunit/inport 16'h1 0
+run
+force -freeze sim:/fetchmemoryunit/reset 0 0
+run
